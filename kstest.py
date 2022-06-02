@@ -287,9 +287,10 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 
 
 def get_unique_numbers(numbers):
-    shifted_numbers = np.append(np.nan, numbers[:-1])
+    object_numbers = np.array(numbers, dtype=np.object)
+    shifted_numbers = np.append(object_numbers[1:], np.nan)
 
-    return numbers[numbers != shifted_numbers]
+    return numbers[object_numbers != shifted_numbers]
 
 
 from collections import Counter

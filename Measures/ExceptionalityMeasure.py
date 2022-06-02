@@ -10,8 +10,8 @@ class ExceptionalityMeasure(BaseMeasure):
         super().__init__()
 
     def draw_bar(self, bin_item: Bin, influence_vals: dict = None, title=None):
-        res_col = bin_item.get_actual_result_column()
-        src_col = bin_item.get_actual_source_column()
+        res_col = bin_item.get_binned_result_column()
+        src_col = bin_item.get_binned_source_column()
 
         res_probs = res_col.value_counts(normalize=True)
         src_probs = None if src_col is None else src_col.value_counts(normalize=True)
@@ -47,7 +47,8 @@ class ExceptionalityMeasure(BaseMeasure):
         if title is not None:
             ax.set_title(utils.to_valid_latex(title), loc='center', wrap=True)
 
-        plt.show()
+        fig = plt.gcf()
+        return fig
 
     def interestingness_only_explanation(self,  source_col, result_col, col_name):
         if utils.is_categorical(source_col):
@@ -94,8 +95,8 @@ class ExceptionalityMeasure(BaseMeasure):
         return influence
 
     def build_explanation(self, current_bin: Bin, col_name, max_value, source_name):
-        source_col = current_bin.get_actual_source_column()
-        res_col = current_bin.get_actual_result_column()
+        source_col = current_bin.get_binned_source_column()
+        res_col = current_bin.get_binned_result_column()
 
         res_probs = res_col.value_counts(normalize=True)
         source_probs = source_col.value_counts(normalize=True)
@@ -130,8 +131,9 @@ class ExceptionalityMeasure(BaseMeasure):
 
             source_prob = 100 * source_probs[max_value]
             res_prob = 100 * res_probs.get(max_value, 0)
+            max_value_rep = current_bin.get_bin_representation(max_value)
             additional_explanation.append(f"See that the column \\textbf{{\"{col_name}\"}} presents a significant change in distribution.\n"
-                                          f"In particular, \\textbf{{\"{utils.to_valid_latex(max_value)}\"}} (in green)"
+                                          f"In particular, \\textbf{{\"{utils.to_valid_latex(max_value_rep)}\"}} (in green)"
                                           f" appears {utils.smart_round(factor)} times {proportion} "
                                           f"than before (was {source_prob:.1f}\\% now {res_prob:.1f}\\%)")
 

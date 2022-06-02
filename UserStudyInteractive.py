@@ -83,8 +83,6 @@ def filter_(db,db_name, attr, op, val, ignore={}):
     measure = ExceptionalityMeasure()
     scores = measure.calc_measure(f, {})
 
-    measure.calc_interestingness_only()
-
     results = measure.calc_influence(max_key(scores))
 
     return f.result_df

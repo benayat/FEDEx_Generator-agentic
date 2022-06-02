@@ -63,7 +63,7 @@ class DiversityMeasure(BaseMeasure):
 
     def draw_bar(self, bin_item: MultiIndexBin, influence_vals: dict = None, title=None):
         try:
-            res_col = bin_item.get_actual_result_column()
+            res_col = bin_item.get_binned_result_column()
             average = res_col.mean()
             aggregated_result = res_col.groupby(bin_item.get_bin_name()).agg(get_agg_func_from_name(res_col.name))
             max_values, max_influence = self.get_max_k(influence_vals, 1)
@@ -93,7 +93,7 @@ class DiversityMeasure(BaseMeasure):
             fig.set_size_inches(2*x, y)
             plt.subplot(1, 2, 1)
             plt.title(utils.to_valid_latex(title))
-            draw_bar(labels, aggregate_column, average, [max_value],
+            draw_bar(labels, aggregate_column, aggregated_result.mean(), [max_value],
                      xname=bin_item.get_bin_name() + " values", yname=bin_item.get_value_name())
 
             if len(max_values) > 1:
@@ -103,13 +103,15 @@ class DiversityMeasure(BaseMeasure):
                          average, max_values,
                          xname=f"{bin_item.get_base_name()} where {bin_item.get_bin_name()} = {max_value}", yname=bin_item.get_value_name(), alpha=0.5)
 
-            plt.show()
         except Exception as e:
+            print(e)
             plt.title(utils.to_valid_latex(title))
-            draw_bar(list(bin_item.get_actual_result_column().index),
-                     list(bin_item.get_actual_result_column()),
+            draw_bar(list(bin_item.get_binned_result_column().index),
+                     list(bin_item.get_binned_result_column()),
                      yname=bin_item.get_bin_name())
-            plt.show()
+
+        fig = plt.gcf()
+        return fig
 
     def interestingness_only_explanation(self,  source_col, result_col, col_name):
         return f"After employing the GroupBy operation we can see highly diverse set of values in the column '{col_name}'\n" \
@@ -154,10 +156,10 @@ class DiversityMeasure(BaseMeasure):
 
     def calc_measure_internal(self, bin: Bin):
         return self.calc_diversity(None if bin.source_column is None else bin.source_column.dropna(),
-                                        bin.result_column.dropna())
+                                   bin.result_column.dropna())
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
-        res_col = current_bin.get_actual_result_column()
+        res_col = current_bin.get_binned_result_column()
         if utils.is_categorical(res_col):
             return ""
         var = self.calc_var(res_col)
@@ -172,7 +174,7 @@ class DiversityMeasure(BaseMeasure):
             max_value_numeric = operation(bin_values)
             max_col_name = current_bin.get_bin_name()
         elif current_bin.name == "NoBin":
-            result_column = current_bin.get_actual_result_column()
+            result_column = current_bin.get_binned_result_column()
             max_value_numeric = max_value
             max_value = result_column.index[result_column == max_value].tolist()
             max_col_name = result_column.index.name

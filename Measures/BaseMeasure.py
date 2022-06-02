@@ -79,12 +79,14 @@ class BaseMeasure(object):
                 continue
 
             source_col, res_col = self.get_source_and_res_cols(dataset_relation, attr)
+            if len(res_col) == 0:
+                continue
 
             size = operation_object.get_bins_count()
 
             bin_candidates = Bins(source_col, res_col, size)
 
-            measure_score = 0
+            measure_score = -np.inf
             for bin_ in bin_candidates.bins:
                 measure_score = max(self.calc_measure_internal(bin_), measure_score)
 
@@ -143,7 +145,7 @@ class BaseMeasure(object):
         K = 3
         results_columns = ["score", "significance", "influence", "explanation", "bin", "influence_vals", "bin_name", "column_name"]
         results = pd.DataFrame([], columns=results_columns)
-
+        figures = []
         for score, max_col_name, bins, _ in list_scores_sorted[:-K-1:-1]:
             source_name, bins, score, _ = self.score_dict[max_col_name]
             for current_bin in bins.bins:
@@ -158,6 +160,7 @@ class BaseMeasure(object):
                 for max_value, influence_val in zip(max_values, max_influences):
                     significance = self.get_significance(influence_val, influence_vals_list)
                     explanation = self.build_explanation(current_bin, max_col_name, max_value, source_name)
+
                     new_result = dict(zip(results_columns, [score, significance, influence_val, explanation, current_bin, influence_vals, current_bin.get_bin_name(), max_col_name]))
                     results = results.append([new_result], ignore_index=True)
 
@@ -167,9 +170,10 @@ class BaseMeasure(object):
         bins = results[skyline]["bin"]
         influence_vals = results[skyline]["influence_vals"]
         for explanation, current_bin, current_influence_vals in zip(explanations, bins, influence_vals):
-            self.draw_bar(current_bin, current_influence_vals, title=explanation)
-            continue
-        return results
+            fig = self.draw_bar(current_bin, current_influence_vals, title=explanation)
+            figures.append(fig)
+
+        return figures
 
     def calc_interestingness_only(self):
         score_and_col = [(self.score_dict[col][2], col, self.score_dict[col][1], self.score_dict[col][3])

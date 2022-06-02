@@ -1,41 +1,33 @@
 import utils
 import pandas as pd
-import numpy as np
 
 
 class Bin(object):
-    def __init__(self, source_column, result_column, name, original_source_column, original_result_column):
+    def __init__(self, source_column, result_column, name):
         self.source_column, self.result_column = source_column, result_column
-        self.original_source_column, self.original_result_column = original_source_column, original_result_column
         self.name = name
 
-    def get_actual_source_column(self):
+    def get_binned_source_column(self):
         return self.source_column
 
-    def get_actual_result_column(self):
-        return self.result_column
-
-    def get_original_source_column(self):
-        return self.source_column
-
-    def get_original_result_column(self):
+    def get_binned_result_column(self):
         return self.result_column
 
     def get_source_by_values(self, values):
-        source_column = self.get_actual_source_column()
+        source_column = self.get_binned_source_column()
         if source_column is None:
             return None
 
         return source_column[source_column.isin(values)]
 
     def get_result_by_values(self, values):
-        result_column = self.get_actual_result_column()
+        result_column = self.get_binned_result_column()
         return result_column[result_column.isin(values)]
 
     def get_bin_values(self):
-        source_col = self.get_actual_source_column()
+        source_col = self.get_binned_source_column()
         source_col = [] if source_col is None else source_col
-        res_col = self.get_actual_result_column()
+        res_col = self.get_binned_result_column()
         values = list(set(source_col).union(set(res_col)))
         values.sort()
 
@@ -48,9 +40,26 @@ class Bin(object):
         return utils.format_bin_item(item)
 
 
+class UserBin(Bin):
+    def __init__(self, source_column, result_column):
+        super().__init__(source_column, result_column, "UserDefined")
+
+    def get_binned_source_column(self):
+        raise NotImplementedError()
+
+    def get_binned_result_column(self):
+        raise NotImplementedError()
+
+    def get_bin_name(self):
+        raise NotImplementedError()
+
+    def get_bin_representation(self, item):
+        raise NotImplementedError()
+
+
 class MultiIndexBin(Bin):
     def __init__(self, source_column, result_column, level_index):
-        super().__init__(source_column, result_column, "MultiIndexBin", source_column, result_column)
+        super().__init__(source_column, result_column, "MultiIndexBin")
         self.level_index = level_index
 
     def get_source_by_values(self, values):
@@ -64,9 +73,6 @@ class MultiIndexBin(Bin):
 
     def get_bin_values(self):
         return list(self.result_column.index.levels[self.level_index])
-
-    def get_bin_actual_value(self, value):
-        return value
 
     def get_base_name(self):
         return self.result_column.index.names[0]
@@ -92,22 +98,19 @@ class NumericBin(Bin):
             if len(bins) > 0:
                 bins[0] -= 1     # stupid hack because pandas cut uses (,] boundaries, and the first bin is [,]
 
-        super().__init__(binned_source_column, binned_result_column, "NumericBin", source_column, result_column)
+        super().__init__(binned_source_column, binned_result_column, "NumericBin")
         self.bins = bins
 
-    def get_actual_source_column(self):
+    def get_binned_source_column(self):
         if self.source_column is None:
             return None
 
         bins_dict = dict(enumerate(self.bins))
         return self.source_column.map(bins_dict)
 
-    def get_actual_result_column(self):
+    def get_binned_result_column(self):
         bins_dict = dict(enumerate(self.bins))
         return self.result_column.map(bins_dict)
-
-    def get_bin_actual_value(self, value):
-        return self.bins[value]
 
     def get_bin_representation(self, item):
         item_index = list(self.bins).index(item)
@@ -124,24 +127,23 @@ class CategoricalBin(Bin):
         return [v for (k, v) in col_values[:k]]
 
     def __init__(self, source_column, result_column, size):
-        original_source_column, original_result_column = source_column.copy(), result_column.copy()
         self.result_values = self.get_top_k_values(result_column, size - 1)
         id_map_top_k = dict(zip(self.result_values, self.result_values))
 
         if source_column is not None:
             source_column.map(id_map_top_k)
         result_column.map(id_map_top_k)
-        super().__init__(source_column, result_column, "CategoricalBin", original_source_column, original_result_column)
+        super().__init__(source_column, result_column, "CategoricalBin")
 
     def get_source_by_values(self, values):
-        source_column = self.get_actual_source_column()
+        source_column = self.get_binned_source_column()
         if source_column is None:
             return None
 
         return source_column[source_column.isin(values) | source_column.isnull()]
 
     def get_result_by_values(self, values):
-        result_column = self.get_actual_result_column()
+        result_column = self.get_binned_result_column()
         return result_column[result_column.isin(values) | result_column.isnull()]
 
     def get_bin_values(self):
@@ -150,32 +152,38 @@ class CategoricalBin(Bin):
 
 class NoBin(Bin):
     def __init__(self, source_column, result_column):
-        super().__init__(source_column, result_column, "NoBin", source_column, result_column)
+        super().__init__(source_column, result_column, "NoBin")
 
 
 class Bins(object):
-    BIN_SIZES = [40]
+    @staticmethod
+    def default_binning_method(source_column, result_column):
+        return []
 
-    def __init__(self, source_column, result_column, bins_count, bin_function=pd.qcut):
-        self.bin_func = bin_function
+    BIN_SIZES = [5, 10]
+    USER_BINNING_METHOD = default_binning_method
+    ONLY_USER_BINS = False
+
+    def __init__(self, source_column, result_column, bins_count):
         self.max_bin_count = bins_count
-        self.bins = []
+        self.bins = list(Bins.USER_BINNING_METHOD(source_column, result_column))
+
+        if Bins.ONLY_USER_BINS:
+            return
 
         if source_column is None:
             # GroupBy
             self.bins += self.get_multi_index_bins(source_column, result_column, bins_count)
             return
-
         if utils.is_numeric(result_column):
             self.bins += self.bin_numeric(source_column, result_column, bins_count)
         else:
             self.bins += self.bin_categorical(source_column, result_column, bins_count)
 
-        if len(self.bins) == 0 and not utils.is_numeric(result_column) and len(result_column) <= 1000:
-            self.bins.append(NoBin(source_column, result_column))
-
-    def set_bin_func(self, func):
-        self.bin_func = func
+    @staticmethod
+    def register_binning_method(method, use_only_user_bins=False):
+        Bins.USER_BINNING_METHOD = method
+        Bins.ONLY_USER_BINS = use_only_user_bins
 
     @staticmethod
     def bin_numeric(source_col, res_col, size):
@@ -212,4 +220,5 @@ class Bins(object):
                 continue
             if 1 < len(level) <= size:
                 bins_candidates.append(MultiIndexBin(source_col, res_col, level_index))
+
         return bins_candidates
