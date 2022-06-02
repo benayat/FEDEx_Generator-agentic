@@ -2,7 +2,7 @@ from Operations import Filter
 from Operations import Join
 from Operations import GroupBy
 from Measures.ExceptionalityMeasure import ExceptionalityMeasure
-from Measures.DiversityMeasure import DiversityMeasure
+from Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 import pandas as pd
 from utils import max_key
 import warnings
@@ -57,7 +57,7 @@ def group_by(db,db_name, attrs, agg_dict, ignore={}):
     print(f"SELECT {items} FROM {db_name} GROUP BY {attr_str};")
     g = GroupBy.GroupBy(db, ignore, attrs, agg_dict)
     print(g.result_df)
-    measure = DiversityMeasure()
+    measure = NormalizedDiversityMeasure()
     scores = measure.calc_measure(g, {})
     results = measure.calc_influence(max_key(scores))
 

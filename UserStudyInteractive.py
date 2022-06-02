@@ -1,18 +1,18 @@
-import os
 from measures_code_example import *
 import warnings
-from matplotlib import pyplot as plt
+
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_colwidth', 999)
 pd.set_option('display.max_columns', 999)
+
 from Operations import Filter
 from Operations import Join
 from Operations import GroupBy
 from Measures.ExceptionalityMeasure import ExceptionalityMeasure
-from Measures.DiversityMeasure import DiversityMeasure
+from Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 from enum import Enum
 import utils
-from IPython.display import display, HTML, Image
+from IPython.display import display, HTML
 
 
 def compare_rows(row1, row2):
@@ -38,10 +38,8 @@ def display_bold(string, size: Header = Header.h3):
     display(HTML(f'<{size.name}><span style="color: #0000ff;"><strong>{string}</strong></span><{size.name}>'))
 
 
-def print_header(number):
-    display_bold(f"Explanation #{number}", Header.h4)
-
 SAMPLE = 5000
+
 
 def join(dbl, dbl_name, dbr, dbr_name, attr, ignore={}):
     if SAMPLE and max(len(dbl), len(dbr)) > SAMPLE:
@@ -95,11 +93,10 @@ def group_by(db,db_name, attrs, agg_dict, ignore={}):
     g = GroupBy.GroupBy(db, ignore, attrs, agg_dict)
 
     display(g.result_df)
-    measure = DiversityMeasure()
+    measure = NormalizedDiversityMeasure()
     scores = measure.calc_measure(g, {})
 
     results = measure.calc_influence(max_key(scores))
-    display(results)
     
     return g.result_df
 
