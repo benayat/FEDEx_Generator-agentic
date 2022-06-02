@@ -51,8 +51,8 @@ def join(dbl, dbl_name, dbr, dbr_name, attr, ignore={}):
 
         measure = ExceptionalityMeasure()
         scores = measure.calc_measure(j_sampled, {})
-        top_1 = sorted(scores, key=scores.get, reverse=True)[0]
-        ignore = { col:"i" for col in scores if col != top_1 }
+        top_3 = sorted(scores, key=scores.get, reverse=True)[:3]
+        ignore = { col:"i" for col in scores if col not in top_3 }
 
     display_bold(f"SELECT * FROM {dbl_name} INNER JOIN {dbr_name} ON {dbl_name}.{attr}={dbr_name}.{attr};")
 
@@ -72,8 +72,8 @@ def filter_(db,db_name, attr, op, val, ignore={}):
         f_sampled = Filter.Filter(db.sample(n=SAMPLE), ignore, attr, op, val)
         measure = ExceptionalityMeasure()
         scores = measure.calc_measure(f_sampled, {})
-        top_1 = sorted(scores, key=scores.get, reverse=True)[0]
-        ignore = { col:"i" for col in scores if col != top_1 }
+        top_3 = sorted(scores, key=scores.get, reverse=True)[:3]
+        ignore = { col:"i" for col in scores if col not in top_3 }
     f = Filter.Filter(db, ignore, attr, op, val)
 
     display(f.result_df)
