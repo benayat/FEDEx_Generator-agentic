@@ -1,5 +1,3 @@
-
-
 class DatasetRelation(object):
     def __init__(self, source_df, result_df, source_table_name):
         self.source_df = source_df

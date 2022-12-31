@@ -1,6 +1,7 @@
-from Measures import DiversityMeasure
 import numpy as np
-import utils
+
+from fedex_generator.Measures import DiversityMeasure
+from fedex_generator.commons import utils
 
 
 class NormalizedDiversityMeasure(DiversityMeasure.DiversityMeasure):

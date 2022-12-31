@@ -66,8 +66,8 @@ def _count_paths_outside_method(m, n, g, h):
     # Not every x needs to be considered.
     # xj holds the list of x values to be checked.
     # Wherever n*x/m + ng*h crosses an integer
-    lxj = n + (mg-h)//mg
-    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
+    lxj = n + (mg - h) // mg
+    xj = [(h + mg * j + ng - 1) // ng for j in range(lxj)]
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
@@ -82,7 +82,7 @@ def _count_paths_outside_method(m, n, g, h):
         if not np.isfinite(Bj):
             raise FloatingPointError()
         for i in range(j):
-            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
+            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j - i))
             Bj -= bin * B[i]
         B[j] = Bj
         if not np.isfinite(Bj):
@@ -90,7 +90,7 @@ def _count_paths_outside_method(m, n, g, h):
     # Compute the number of path extensions...
     num_paths = 0
     for j in range(lxj):
-        bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
+        bin = np.round(special.binom((m - xj[j]) + (n - j), n - j))
         term = B[j] * bin
         if not np.isfinite(term):
             raise FloatingPointError()
@@ -474,7 +474,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='asymp'):
             z = np.sqrt(en) * d
             # Use Hodges' suggested approximation Eqn 5.3
             # Requires m to be the larger of (n1, n2)
-            expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
+            expt = -2 * z ** 2 - 2 * z * (m + 2 * n) / np.sqrt(m * n * (m + n)) / 3.0
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)

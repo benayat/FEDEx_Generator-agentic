@@ -1,50 +1,59 @@
-from Measures.BaseMeasure import BaseMeasure, draw_histogram
-from Measures.Bins import Bin, MultiIndexBin
 import numpy as np
-import utils
-import matplotlib.pyplot as plt
 import pandas as pd
+from scipy import stats
+
+from fedex_generator.Measures.BaseMeasure import BaseMeasure, START_BOLD, END_BOLD
+from fedex_generator.Measures.Bins import Bin, MultiIndexBin
+from fedex_generator.commons import utils
 
 
-def draw_bar(x: list, y: list, avg_line=None, items_to_bold=None, head_values=None, xname=None, yname=None, alpha=1.):
+OP_TO_FUNC = {
+    'count': np.sum,
+    'sum': np.sum,
+    'max': np.max,
+    'min': np.min,
+    'mean': np.mean,
+    'prod': np.prod,
+    'sem': stats.sem,
+    'var': np.var,
+    'std': np.std,
+    'median': np.median,
+    'first': lambda bin_values: bin_values[0],
+    'last': lambda bin_values: bin_values[-1],
+    'size': np.sum
+}
+
+
+def draw_bar(x: list, y: list, avg_line=None, items_to_bold=None, head_values=None, xname=None, yname=None, alpha=1.,
+             ax=None):
     width = 0.5
     ind = np.arange(len(x))
     x = x if utils.is_numeric(x) else [utils.to_valid_latex(i) for i in x]
     y = y if utils.is_numeric(y) else [utils.to_valid_latex(i) for i in y]
     if items_to_bold is not None:
-        items_to_bold = items_to_bold if utils.is_numeric(items_to_bold) else [utils.to_valid_latex(i) for i in items_to_bold]
+        items_to_bold = items_to_bold if utils.is_numeric(items_to_bold) else [utils.to_valid_latex(i) for i in
+                                                                               items_to_bold]
 
-    bar = plt.bar(ind, y, width, alpha=alpha)
-    plt.xticks(ind, tuple([str(i) for i in x]), rotation='vertical')
+    bar = ax.bar(ind, y, width, alpha=alpha)
+    ax.set_xticks(ind)
+    ax.set_xticklabels(tuple([str(i) for i in x]), rotation='vertical')
+    ax.set_ylim(min(y) - min(y) * 0.01, max(y) + max(y) * 0.001)
 
     if avg_line is not None:
-        plt.axhline(avg_line, color='red', linewidth=1)
+        ax.axhline(avg_line, color='red', linewidth=1)
     if items_to_bold is not None:
         for item in items_to_bold:
             bar[x.index(item)].set_color('green')
     if head_values is not None:
         for i, col in enumerate(bar):
             yval = col.get_height()
-            plt.text(col.get_x(), yval + .05, head_values[i])
+            ax.text(col.get_x(), yval + .05, head_values[i])
 
     if xname is not None:
-        plt.xlabel(utils.to_valid_latex(xname), fontsize=16)
+        ax.set_xlabel(utils.to_valid_latex(xname), fontsize=16)
 
     if yname is not None:
-        plt.ylabel(utils.to_valid_latex(yname), fontsize=16)
-
-
-def get_agg_func_from_name(name):
-    operation = name.split("_")[-1]
-    OP_TO_FUNC = {
-        "count": np.sum,
-        "sum": np.sum,
-        "max": np.max,
-        "min": np.min,
-        "mean": np.mean,
-    }
-
-    return OP_TO_FUNC[operation]
+        ax.set_ylabel(utils.to_valid_latex(yname), fontsize=16)
 
 
 def flatten_other_indexes(series, main_index):
@@ -61,13 +70,32 @@ class DiversityMeasure(BaseMeasure):
     def __init__(self):
         super().__init__()
 
-    def draw_bar(self, bin_item: MultiIndexBin, influence_vals: dict = None, title=None):
+    def get_agg_func_from_name(self, name):
+        operation = name.split("_")[-1].lower()
+        if hasattr(pd.Series, operation):
+            return getattr(pd.Series, operation)
+        elif operation in OP_TO_FUNC:
+            return OP_TO_FUNC[operation]
+
+        res = []
+        for x in self.operation_object.agg_dict:
+            for y in self.operation_object.agg_dict[x]:
+                res.append(x + '_' + (y if isinstance(y, str) else y.__name__))
+        aggregation_index = res.index(name)
+        return list(self.operation_object.agg_dict.values())[0][aggregation_index]
+
+    def draw_bar(self, bin_item: MultiIndexBin, influence_vals: dict = None, title=None, ax=None, score=None,
+                 show_scores: bool = False):
         try:
             res_col = bin_item.get_binned_result_column()
-            average = res_col.mean()
-            aggregated_result = res_col.groupby(bin_item.get_bin_name()).agg(get_agg_func_from_name(res_col.name))
+            average = float(utils.smart_round(res_col.mean()))
+
+            agger_function = self.get_agg_func_from_name(res_col.name)
+            aggregated_result = res_col.groupby(bin_item.get_bin_name()).agg(agger_function)
+
             max_values, max_influence = self.get_max_k(influence_vals, 1)
             max_value = max_values[0]
+
             bin_result = bin_item.result_column.copy()
             bin_result = flatten_other_indexes(bin_result, bin_item.get_bin_name())
             smallest_multi_bin = MultiIndexBin(bin_item.source_column, bin_result, 0)
@@ -88,32 +116,47 @@ class DiversityMeasure(BaseMeasure):
                 labels = sorted(labels)
 
             aggregate_column = [aggregated_result.get(item, 0) for item in labels]
-            fig = plt.gcf()
-            x, y = fig.get_size_inches()
-            fig.set_size_inches(2*x, y)
-            plt.subplot(1, 2, 1)
-            plt.title(utils.to_valid_latex(title))
-            draw_bar(labels, aggregate_column, aggregated_result.mean(), [max_value],
-                     xname=bin_item.get_bin_name() + " values", yname=bin_item.get_value_name())
+            if show_scores:
+                ax.set_title(f'score: {score}\n{utils.to_valid_latex(title)}', fontdict={'fontsize': 14})
+            else:
+                ax.set_title(utils.to_valid_latex(title), fontdict={'fontsize': 14})
 
-            if len(max_values) > 1:
-                plt.subplot(1, 2, 2)
-                plt.title(utils.to_valid_latex(f"Zoom in on {bin_item.get_bin_name()} = {max_value}"))
-                draw_bar(max_values, [bin_result[i].mean() for i in max_values],
-                         average, max_values,
-                         xname=f"{bin_item.get_base_name()} where {bin_item.get_bin_name()} = {max_value}", yname=bin_item.get_value_name(), alpha=0.5)
+            draw_bar(labels, aggregate_column, aggregated_result.mean(), [max_value],
+                     xname=f'{bin_item.get_bin_name()} values', yname=bin_item.get_value_name(), ax=ax)
+            ax.set_axis_on()
 
         except Exception as e:
-            print(e)
-            plt.title(utils.to_valid_latex(title))
-            draw_bar(list(bin_item.get_binned_result_column().index),
-                     list(bin_item.get_binned_result_column()),
-                     yname=bin_item.get_bin_name())
+            columns = bin_item.get_binned_result_column()
+            title = self._fix_explanation(title, columns, max_value)
+            ax.set_title(utils.to_valid_latex(title))
+            max_group_value = list(columns[columns == max_value].to_dict().keys())[0]
 
-        fig = plt.gcf()
-        return fig
+            draw_bar(list(columns.index),
+                     list(columns),
+                     average,
+                     [max_group_value],
+                     yname=bin_item.get_bin_name(), ax=ax)
 
-    def interestingness_only_explanation(self,  source_col, result_col, col_name):
+            ax.set_axis_on()
+
+    @staticmethod
+    def _fix_explanation(explanation, binned_column, max_value):
+        """
+        Change explanation column to match group by
+        :param explanation:  bin explanation
+        :param binned_column: bin column
+        :param max_value: max value
+
+        :return: new explanation
+        """
+        max_group_value = list(binned_column[binned_column == max_value].to_dict().keys())[0]
+        max_value_name = binned_column.name.replace('_', '\\ ')
+        group_by_name = binned_column.to_frame().axes[0].name
+
+        return explanation.replace(f'\'{max_value_name}\'=\'{max_value}\'',
+                                   f'\'{group_by_name}\' = \'{max_group_value}\'')
+
+    def interestingness_only_explanation(self, source_col, result_col, col_name):
         return f"After employing the GroupBy operation we can see highly diverse set of values in the column '{col_name}'\n" \
                f"The variance" + \
                (f" was {self.calc_var(source_col)} and now it " if source_col is not None else "") + \
@@ -155,8 +198,12 @@ class DiversityMeasure(BaseMeasure):
         return 0 if np.isnan(res) else res
 
     def calc_measure_internal(self, bin: Bin):
+        result_column = bin.result_column.dropna()
+        if bin.name == "MultiIndexBin":
+            operation = self.get_agg_func_from_name(result_column.name)
+            result_column = result_column.groupby(bin.get_bin_name()).agg(operation)
         return self.calc_diversity(None if bin.source_column is None else bin.source_column.dropna(),
-                                   bin.result_column.dropna())
+                                   result_column)
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
         res_col = current_bin.get_binned_result_column()
@@ -169,23 +216,32 @@ class DiversityMeasure(BaseMeasure):
             max_value_numeric = res_col.value_counts()[max_value]
         elif current_bin.name == "MultiIndexBin":
             bin_values = current_bin.get_result_by_values([max_value])
-            operation = get_agg_func_from_name(max_col_name)
-
+            operation = self.get_agg_func_from_name(res_col.name)
             max_value_numeric = operation(bin_values)
             max_col_name = current_bin.get_bin_name()
+            res_col = res_col.groupby(max_col_name).agg(operation)
+            var = self.calc_var(res_col)
         elif current_bin.name == "NoBin":
             result_column = current_bin.get_binned_result_column()
             max_value_numeric = max_value
             max_value = result_column.index[result_column == max_value].tolist()
             max_col_name = result_column.index.name
+
         elif type(current_bin) == Bin:
             raise Exception("Bin is not supported")
         else:
             raise Exception(f"unknown bin type {current_bin.name}")
 
-        x = (max_value_numeric - np.mean(res_col)) / np.sqrt(var)
-        expl = f"\\textbf{{Explanation:}} See that the column \\textbf{{{max_col_name}}}, presents a significant diversity.\n " \
-               f"In particular, groups with \\textbf{{'{max_col_name}'='{max_value}'}} (in green) have a relatively \\textbf{{{'low' if x < 0 else 'high'}}} '{res_col.name}' value:\n" \
-               f'{utils.smart_round(np.abs(x))} standard deviation {"lower" if x < 0 else "higher"} than the mean ({utils.smart_round(np.mean(res_col))})'
+        sqr = np.sqrt(var)
+        x = ((max_value_numeric - np.mean(res_col)) / sqr) if sqr != 0 else 0
+
+        group_by_text = utils.to_valid_latex(f"'{max_col_name}'='{max_value}'", True)
+        proportion = 'low' if x < 0 else 'high'
+        proportion_column = utils.to_valid_latex(f"{proportion} '{res_col.name}'", True)
+
+        expl = f"Groups with {START_BOLD}{group_by_text}{END_BOLD} (in green) \n" \
+               f"have a relatively {START_BOLD}{proportion_column}{END_BOLD} value:\n" \
+               f"{utils.smart_round(np.abs(x))} standard deviation {proportion} than the mean " \
+               f"({utils.smart_round(np.mean(res_col))})"
 
         return expl
