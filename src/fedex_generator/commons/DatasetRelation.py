@@ -5,7 +5,8 @@ class DatasetRelation(object):
         self.source_table_name = source_table_name
 
     def get_source(self, attr):
-        if attr not in self.source_df:
+        # GroupBy
+        if self.source_df is None or attr not in self.source_df:
             return None
         return self.source_df[attr]
 

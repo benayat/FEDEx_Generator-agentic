@@ -1,10 +1,10 @@
 import numpy as np
 
-from fedex_generator.Measures import DiversityMeasure
+from fedex_generator.Measures.DiversityMeasure import DiversityMeasure
 from fedex_generator.commons import utils
 
 
-class NormalizedDiversityMeasure(DiversityMeasure.DiversityMeasure):
+class NormalizedDiversityMeasure(DiversityMeasure):
     def __init__(self):
         super().__init__()
 

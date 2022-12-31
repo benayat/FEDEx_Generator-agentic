@@ -86,14 +86,14 @@ class DiversityMeasure(BaseMeasure):
     def draw_bar(self, bin_item: MultiIndexBin, influence_vals: dict = None, title=None, ax=None, score=None,
                  show_scores: bool = False):
         try:
+            max_values, max_influence = self.get_max_k(influence_vals, 1)
+            max_value = max_values[0]
+
             res_col = bin_item.get_binned_result_column()
             average = float(utils.smart_round(res_col.mean()))
 
             agger_function = self.get_agg_func_from_name(res_col.name)
             aggregated_result = res_col.groupby(bin_item.get_bin_name()).agg(agger_function)
-
-            max_values, max_influence = self.get_max_k(influence_vals, 1)
-            max_value = max_values[0]
 
             bin_result = bin_item.result_column.copy()
             bin_result = flatten_other_indexes(bin_result, bin_item.get_bin_name())

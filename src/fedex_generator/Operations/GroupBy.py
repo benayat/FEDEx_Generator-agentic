@@ -5,6 +5,7 @@ from fedex_generator.commons import utils
 from fedex_generator.commons.DatasetRelation import DatasetRelation
 from fedex_generator.Operations import Operation
 from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
+from fedex_generator.Measures.DiversityMeasure import DiversityMeasure
 
 
 class GroupBy(Operation.Operation):
@@ -50,8 +51,8 @@ class GroupBy(Operation.Operation):
 
         if attributes is None:
             attributes = []
-        # measure = DiversityMeasure()
-        measure = NormalizedDiversityMeasure()
+        measure = DiversityMeasure()
+        # measure = NormalizedDiversityMeasure()
         scores = measure.calc_measure(self, schema, attributes)
         figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
