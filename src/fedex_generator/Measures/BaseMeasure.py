@@ -170,7 +170,7 @@ class BaseMeasure(object):
         list_scores_sorted = score_and_col
         list_scores_sorted.sort()
         K = top_k
-        results_columns = ["score", "significance", "influence", "explanation", "bin", "shap_vals"]
+        results_columns = ["score", "significance", "influence", "explanation", "bin", "influence_vals"]
         results = pd.DataFrame([], columns=results_columns)
         figures = []
         for score, max_col_name, bins, _ in list_scores_sorted[:-K - 1:-1]:
@@ -199,7 +199,7 @@ class BaseMeasure(object):
         skyline = paretoset(results_skyline, ["diff", "max"])
         explanations = results[skyline]["explanation"]
         bins = results[skyline]["bin"]
-        influence_vals = results[skyline]["influence"]
+        influence_vals = results[skyline]["influence_vals"]
         scores = results[skyline]["score"]
 
         if len(scores) == 0:
