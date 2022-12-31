@@ -1,10 +1,10 @@
 import pandas as pd
 
-from FEDEx_Generator.commons.consts import TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
-from FEDEx_Generator.commons import utils
-from FEDEx_Generator.commons.DatasetRelation import DatasetRelation
-from FEDEx_Generator.Operations import Operation
-from FEDEx_Generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
+from fedex_generator.commons.consts import TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
+from fedex_generator.commons import utils
+from fedex_generator.commons.DatasetRelation import DatasetRelation
+from fedex_generator.Operations import Operation
+from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 
 
 class GroupBy(Operation.Operation):

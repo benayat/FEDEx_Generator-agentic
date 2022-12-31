@@ -7,7 +7,6 @@ import scipy.special as special
 from scipy.stats import distributions
 from collections import namedtuple
 
-
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
 
@@ -293,7 +292,6 @@ def get_unique_numbers(numbers):
     return numbers[object_numbers != shifted_numbers]
 
 
-from collections import Counter
 def ks_2samp(data1, data2, alternative='two-sided', mode='asymp'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -423,16 +421,6 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='asymp'):
     # using searchsorted solves equal data problem
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
-    # data1_items, data1_counts = np.unique(data1, return_counts=True)
-    # data2_items, data2_counts = np.unique(data2, return_counts=True)
-    # data1_dict = dict(zip(data1_items, data1_counts))
-    # data2_dict = dict(zip(data2_items, data2_counts))
-    # data1_unique = Counter(data1)
-    # data2_unique = Counter(data2)
-    # data1_counts = [data1_unique.get(item, 0) for item in data_all]
-    # data2_counts = [data2_unique.get(item, 0) for item in data_all]
-    # cdf1 = np.cumsum(data1_counts)
-    # cdf2 = np.cumsum(data2_counts)
     cddiffs = cdf1 - cdf2
     # Ensure sign of minS is not negative.
     minS = np.clip(-np.min(cddiffs), 0, 1)

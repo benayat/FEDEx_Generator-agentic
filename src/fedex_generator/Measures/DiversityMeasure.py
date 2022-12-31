@@ -6,7 +6,6 @@ from fedex_generator.Measures.BaseMeasure import BaseMeasure, START_BOLD, END_BO
 from fedex_generator.Measures.Bins import Bin, MultiIndexBin
 from fedex_generator.commons import utils
 
-
 OP_TO_FUNC = {
     'count': np.sum,
     'sum': np.sum,
@@ -204,6 +203,12 @@ class DiversityMeasure(BaseMeasure):
             result_column = result_column.groupby(bin.get_bin_name()).agg(operation)
         return self.calc_diversity(None if bin.source_column is None else bin.source_column.dropna(),
                                    result_column)
+
+    def build_operation_expression(self, source_name):
+        from fedex_generator.Operations.GroupBy import GroupBy
+        if isinstance(self.operation_object, GroupBy):
+            return f'{source_name}.groupby({self.operation_object.group_attributes})' \
+                   f'.agg({self.operation_object.agg_dict})'
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
         res_col = current_bin.get_binned_result_column()

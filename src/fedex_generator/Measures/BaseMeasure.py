@@ -116,6 +116,12 @@ class BaseMeasure(object):
         raise NotImplementedError()
 
     def build_operation_expression(self, source_name):
+        """
+        Get manipulation expression
+
+        :param source_name: The source df name
+        :return: string of the manipulation
+        """
         raise NotImplementedError()
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
@@ -193,7 +199,7 @@ class BaseMeasure(object):
         skyline = paretoset(results_skyline, ["diff", "max"])
         explanations = results[skyline]["explanation"]
         bins = results[skyline]["bin"]
-        influence_vals = results[skyline]["influence_vals"]
+        influence_vals = results[skyline]["influence"]
         scores = results[skyline]["score"]
 
         if len(scores) == 0:

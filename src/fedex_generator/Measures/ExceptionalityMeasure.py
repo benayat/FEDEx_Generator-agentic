@@ -1,9 +1,10 @@
 import math
+
 import numpy as np
 
+from fedex_generator.commons import utils
 from fedex_generator.Measures.BaseMeasure import BaseMeasure, START_BOLD, END_BOLD
 from fedex_generator.Measures.Bins import Bin
-from fedex_generator.commons import utils
 
 
 class ExceptionalityMeasure(BaseMeasure):
@@ -99,6 +100,16 @@ class ExceptionalityMeasure(BaseMeasure):
             influence.append(score_all - score_without_bin)
 
         return influence
+
+    def build_operation_expression(self, source_name):
+        from fedex_generator.Operations.Filter import Filter
+        from fedex_generator.Operations.Join import Join
+
+        if isinstance(self.operation_object, Filter):
+            return f'Dataframe {self.operation_object.source_name}, ' \
+                   f'filtered on attribute {self.operation_object.attribute}'
+        elif isinstance(self.operation_object, Join):
+            return f'{self.operation_object.right_name} joined with {self.operation_object.left_name} by {self.operation_object.attribute}'
 
     def build_explanation(self, current_bin: Bin, col_name, max_value, source_name):
         source_col = current_bin.get_binned_source_column()

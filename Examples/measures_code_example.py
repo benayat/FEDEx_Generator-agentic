@@ -3,12 +3,12 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from FEDEx_Generator.Operations import Filter
-from FEDEx_Generator.Operations import Join
-from FEDEx_Generator.Operations import GroupBy
-from FEDEx_Generator.Measures.ExceptionalityMeasure import ExceptionalityMeasure
-from FEDEx_Generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
-from FEDEx_Generator.commons.utils import max_key, get_calling_params_name
+from fedex_generator.Operations import Filter
+from fedex_generator.Operations import Join
+from fedex_generator.Operations import GroupBy
+from fedex_generator.Measures.ExceptionalityMeasure import ExceptionalityMeasure
+from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
+from fedex_generator.commons.utils import max_key, get_calling_params_name
 
 SAMPLE = 0
 

@@ -1,4 +1,4 @@
-from FEDEx_Generator.commons.consts import TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
+from fedex_generator.commons.consts import TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
 
 
 class Operation:
