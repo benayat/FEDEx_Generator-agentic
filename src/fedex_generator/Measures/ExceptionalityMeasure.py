@@ -26,12 +26,13 @@ class ExceptionalityMeasure(BaseMeasure):
 
         labels = sorted(labels)
         probabilities = [100. * src_probs.get(item, 0) for item in labels]
-        probabilities2 = [100. * res_probs.get(item, 0) for item in labels]
+        probabilities2 = [100 * res_probs.get(item, 0) for item in labels]
 
         width = 0.35
         ind = np.arange(len(labels))
 
         result_bar = ax.bar(ind + width, probabilities2, width, label="After")
+
         ax.bar(ind, probabilities, width, label="Before")
         ax.legend(loc='best')
         if influence_vals:
@@ -46,7 +47,7 @@ class ExceptionalityMeasure(BaseMeasure):
 
         ax.set_xlabel(utils.to_valid_latex(bin_item.get_bin_name() + " values"), fontsize=20)
         ax.set_ylabel("frequency(\\%)", fontsize=16)
-        ax.set_ylim(min(probabilities), max(probabilities))
+        ax.set_ylim(min(probabilities2) - min(probabilities2) * 0.01, max(probabilities2) + max(probabilities2) * 0.001)
 
         if title is not None:
             if show_scores:
