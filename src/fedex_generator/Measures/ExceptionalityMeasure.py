@@ -47,7 +47,6 @@ class ExceptionalityMeasure(BaseMeasure):
 
         ax.set_xlabel(utils.to_valid_latex(bin_item.get_bin_name() + " values"), fontsize=20)
         ax.set_ylabel("frequency(\\%)", fontsize=16)
-        ax.set_ylim(min(probabilities2) - min(probabilities2) * 0.01, max(probabilities2) + max(probabilities2) * 0.001)
 
         if title is not None:
             if show_scores:
