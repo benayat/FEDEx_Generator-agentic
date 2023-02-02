@@ -196,7 +196,7 @@ class DiversityMeasure(BaseMeasure):
         return 0 if np.isnan(res) else res
 
     def calc_measure_internal(self, bin: Bin):
-        result_column = bin.result_column.dropna()
+        result_column = bin.get_binned_result_column().dropna()
         if bin.name == "MultiIndexBin":
             operation = self.get_agg_func_from_name(result_column.name)
             result_column = result_column.groupby(bin.get_bin_name()).agg(operation)
