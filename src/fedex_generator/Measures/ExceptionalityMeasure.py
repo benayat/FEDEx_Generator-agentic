@@ -1,10 +1,12 @@
 import math
 
 import numpy as np
+import pandas as pd
 
 from fedex_generator.commons import utils
 from fedex_generator.Measures.BaseMeasure import BaseMeasure, START_BOLD, END_BOLD
 from fedex_generator.Measures.Bins import Bin
+
 
 
 class ExceptionalityMeasure(BaseMeasure):
@@ -48,6 +50,7 @@ class ExceptionalityMeasure(BaseMeasure):
         ax.set_xlabel(utils.to_valid_latex(bin_item.get_bin_name() + " values"), fontsize=20)
         ax.set_ylabel("frequency(\\%)", fontsize=16)
 
+
         if title is not None:
             if show_scores:
                 ax.set_title(f'score: {score}\n {utils.to_valid_latex(title)}', fontdict={'fontsize': 14})
@@ -55,6 +58,7 @@ class ExceptionalityMeasure(BaseMeasure):
                 ax.set_title(utils.to_valid_latex(title), fontdict={'fontsize': 14})
 
         ax.set_axis_on()
+        return bin_item.get_bin_name() ####
 
     def interestingness_only_explanation(self, source_col, result_col, col_name):
         if utils.is_categorical(source_col):
@@ -90,6 +94,8 @@ class ExceptionalityMeasure(BaseMeasure):
         bin_values = current_bin.get_bin_values()
         source_col = current_bin.get_source_by_values(bin_values)
         res_col = current_bin.get_result_by_values(bin_values)
+        if len(bin_values) > 15:
+            bin_values = list(source_col.value_counts().nlargest(15).keys())
         score_all = ExceptionalityMeasure.kstest(source_col, res_col)
         influence = []
         for value in bin_values:
