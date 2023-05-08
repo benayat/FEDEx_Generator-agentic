@@ -164,17 +164,27 @@ class BaseMeasure(object):
         return (influence - influence_mean) / np.sqrt(influence_var)
 
     def calc_influence(self, brute_force=False, top_k=TOP_K_DEFAULT,
-                       figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None):
-        score_and_col = [(self.score_dict[col][2], col, self.score_dict[col][1], self.score_dict[col][3])
-                         for col in self.score_dict]
+                       figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, deleted = None):###
+        if deleted:###
+            score_dict = deleted
+        else:
+            score_dict = self.score_dict
+                                    ###            
+        score_and_col = [(score_dict[col][2], col, score_dict[col][1], score_dict[col][3])
+                         for col in score_dict]
+      
+                         
         list_scores_sorted = score_and_col
         list_scores_sorted.sort()
-        K = top_k
+        K = top_k ###
+        if deleted:
+            K = len(deleted.keys())
+                        ####
         results_columns = ["score", "significance", "influence", "explanation", "bin", "influence_vals"]
         results = pd.DataFrame([], columns=results_columns)
         figures = []
         for score, max_col_name, bins, _ in list_scores_sorted[:-K - 1:-1]:
-            source_name, bins, score, _ = self.score_dict[max_col_name]
+            source_name, bins, score, _ = score_dict[max_col_name]
             for current_bin in bins.bins:
                 influence_vals = self.get_influence_col(max_col_name, current_bin, brute_force)
                 influence_vals_list = np.array(list(influence_vals.values()))
@@ -206,7 +216,7 @@ class BaseMeasure(object):
             print(f'{source_name} dataset there is not interesting explanation')
             return
 
-        if top_k > 1:
+        if K > 1: ###
             rows = math.ceil(len(scores) / figs_in_row)
             fig, axes = plt.subplots(rows, figs_in_row, figsize=(7 * figs_in_row, 8 * rows))
             for ax in axes.reshape(-1):
@@ -220,8 +230,9 @@ class BaseMeasure(object):
         for index, (explanation, current_bin, current_influence_vals, score) in enumerate(
                 zip(explanations, bins, influence_vals, scores)):
 
+
             fig = self.draw_bar(current_bin, current_influence_vals, title=explanation,
-                                ax=axes.reshape(-1)[index] if top_k > 1 else axes, score=score, show_scores=show_scores)
+                                ax=axes.reshape(-1)[index] if K > 1 else axes, score=score, show_scores=show_scores) ###
             if fig:
                 figures.append(fig)
 

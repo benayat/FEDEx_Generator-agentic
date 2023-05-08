@@ -36,6 +36,7 @@ def draw_bar(x: list, y: list, avg_line=None, items_to_bold=None, head_values=No
     bar = ax.bar(ind, y, width, alpha=alpha)
     ax.set_xticks(ind)
     ax.set_xticklabels(tuple([str(i) for i in x]), rotation='vertical')
+    ax.set_ylim(min(y) - min(y) * 0.01, max(y) + max(y) * 0.001)
 
     if avg_line is not None:
         ax.axhline(avg_line, color='red', linewidth=1)
@@ -196,7 +197,7 @@ class DiversityMeasure(BaseMeasure):
         return 0 if np.isnan(res) else res
 
     def calc_measure_internal(self, bin: Bin):
-        result_column = bin.result_column.dropna()
+        result_column = bin.get_binned_result_column().dropna()
         if bin.name == "MultiIndexBin":
             operation = self.get_agg_func_from_name(result_column.name)
             result_column = result_column.groupby(bin.get_bin_name()).agg(operation)

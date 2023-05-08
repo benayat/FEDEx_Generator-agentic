@@ -13,7 +13,7 @@ class Operation:
         return self.bins_count
 
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
         """
         Explain for operation
         :param schema: dictionary with new columns names, in case {'col_name': 'i'} will be ignored in the explanation
@@ -27,3 +27,6 @@ class Operation:
         :return: explain figures
         """
         raise NotImplementedError()
+        
+    def present_deleted_correlated(self, figs_in_row: int = DEFAULT_FIGS_IN_ROW): #####
+        return NotImplementedError()

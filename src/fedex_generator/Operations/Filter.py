@@ -1,6 +1,6 @@
 import operator
 import pandas as pd
-
+import matplotlib.pyplot as plt
 from fedex_generator.commons.consts import TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
 from fedex_generator.commons import utils
 from fedex_generator.commons.DatasetRelation import DatasetRelation
@@ -28,6 +28,9 @@ class Filter(Operation.Operation):
         self.source_df = source_df.reset_index()
         self.attribute = attribute
         self.source_scheme = source_scheme
+        self.cor_deleted_atts = {} 
+        self.not_presented = {} 
+        self.corr = self.source_df.corr()
 
         if result_df is None:
             self.operation_str = operation_str
@@ -36,7 +39,7 @@ class Filter(Operation.Operation):
         else:
             self.result_df = result_df
         self.source_name = utils.get_calling_params_name(source_df)
-
+    
     def get_correlated_attributes(self):
         numeric_df = self.source_df.head(10000)  # for performance we take part of the DB
         for column in numeric_df:
@@ -81,8 +84,9 @@ class Filter(Operation.Operation):
 
         return binned_col[binned_col.isin(filter_values)]
 
+    
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
         """
         Explain for filter operation
 
@@ -104,6 +108,46 @@ class Filter(Operation.Operation):
 
         measure = ExceptionalityMeasure()
         scores = measure.calc_measure(self, schema, attributes)
+        self.delete_correlated_atts(measure, TH = corr_TH)
         figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
-        return figures
+        self.correlated_notes(figures, top_k)
+        return None
+        
+        
+    def present_deleted_correlated(self, figs_in_row: int = DEFAULT_FIGS_IN_ROW):
+        measure = ExceptionalityMeasure()
+        measure.calc_influence(deleted = self.not_presented, figs_in_row=figs_in_row)
+        
+    def correlated_notes(self, figures, top_k):
+        txt = ""
+        lentxt = 0
+        self.not_presented = {}
+        for i in range(len(figures)):
+            for cor_del in self.cor_deleted_atts.keys():
+                if figures[i] == cor_del[1] and i < (top_k-1):
+                    lentxt += 1
+                    txt += "[" + str(lentxt) + "] " + "The attribute " + cor_del[0] + " is not presented as it correlates with " + cor_del[1] + " (cor: " + str(round(self.corr[cor_del[0]][cor_del[1]],2)) + ")\n"
+                    self.not_presented[cor_del[0]] = self.cor_deleted_atts[cor_del]
+        if lentxt > 0:
+            txt += "\nIn order to view the not presented attributes, please execute the following: df.present_deleted_correlated()"
+        plt.figtext(0, 0, txt, horizontalalignment='left',verticalalignment='top')        
+    
+    def delete_correlated_atts(self, measure, TH = 0.7):
+        self.cor_deleted_atts = {}
+        corelated_atts = []
+        attributes = self.corr.keys()
+        numattributes = len(attributes)
+        for att in range(numattributes):
+            for att1 in range(att,numattributes):
+                cor = self.corr[attributes[att]][attributes[att1]]
+                if (cor > TH or cor < -TH) and not att==att1:
+                    corelated_atts.append([attributes[att],attributes[att1]])
+        for cor in corelated_atts:
+            if (len(set(cor) - set(measure.score_dict))) == 0:
+                if measure.score_dict[cor[0]][2] > measure.score_dict[cor[1]][2]:
+                    self.cor_deleted_atts[cor[1], cor[0]] = measure.score_dict[cor[1]]
+                    del measure.score_dict[cor[1]]
+                else:
+                    self.cor_deleted_atts[cor[0], cor[1]] = measure.score_dict[cor[0]]
+                    del measure.score_dict[cor[0]]
