@@ -136,20 +136,23 @@ class ExceptionalityMeasure(BaseMeasure):
                 "above {}".format(utils.format_bin_item(max_value)) if index == len(values) - 1 else \
                     "between {} and {}".format(utils.format_bin_item(values[index]),
                                                utils.format_bin_item(values[index + 1]))
-            factor = res_probs.get(max_value, 0) / source_probs[max_value]
-            if factor < 1:
-                factor = math.inf if factor == 0 else 1 / factor
-                proportion = "less"
+            factor = res_probs.get(max_value, 0) / source_probs[max_value]   
+            proportion = "less" if factor < 1 else "more"  
+            if (factor < 1 and factor > 0):
+                factor = 1 / factor
+            if factor == 0:
+                additional_explanation.append(
+                    f"{START_BOLD}{utils.to_valid_latex(col_name, True)}{END_BOLD} values "
+                    f"{START_BOLD}{utils.to_valid_latex(values_range_str, True)}{END_BOLD}\n"
+                    f"are {START_BOLD}no{END_BOLD} {START_BOLD}longer{END_BOLD} {START_BOLD}exist{END_BOLD} (was {round(source_probs[max_value],3)*100}%)")
             else:
-                proportion = "more"
-
-            appear_test = f'{utils.smart_round(factor)} times {proportion}'
-            additional_explanation.append(
-                f"{START_BOLD}{utils.to_valid_latex(col_name, True)}{END_BOLD} values "
-                f"{START_BOLD}{utils.to_valid_latex(values_range_str, True)}{END_BOLD} (in green)\n"
-                f"appear {START_BOLD}"
-                f"{utils.to_valid_latex(appear_test, True)}"
-                f"{END_BOLD} than before")
+                appear_test = f'{utils.smart_round(factor)} times {proportion}'
+                additional_explanation.append(
+                    f"{START_BOLD}{utils.to_valid_latex(col_name, True)}{END_BOLD} values "
+                    f"{START_BOLD}{utils.to_valid_latex(values_range_str, True)}{END_BOLD} (in green)\n"
+                    f"appear {START_BOLD}"
+                    f"{utils.to_valid_latex(appear_test, True)}"
+                    f"{END_BOLD} than before")
         else:
             factor = res_probs.get(max_value, 0) / source_probs[max_value]
 
@@ -174,7 +177,7 @@ class ExceptionalityMeasure(BaseMeasure):
             additional_explanation.append(
                 f"{START_BOLD}{utils.to_valid_latex(col_name, True)}{END_BOLD} value "
                 f"{START_BOLD}{utils.to_valid_latex(max_value_rep, True)}"
-                f"{END_BOLD} (in green){proportion_sentes}")
+                f"{END_BOLD} (in green)\n{proportion_sentes}")
 
         influence_top_example = ", ".join(additional_explanation)
 
