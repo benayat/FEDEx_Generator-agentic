@@ -111,7 +111,8 @@ class Filter(Operation.Operation):
         self.delete_correlated_atts(measure, TH = corr_TH)
         figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
-        self.correlated_notes(figures, top_k)
+        if figures:
+            self.correlated_notes(figures, top_k)
         return None
         
         
