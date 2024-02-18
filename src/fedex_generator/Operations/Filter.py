@@ -30,7 +30,7 @@ class Filter(Operation.Operation):
         self.source_scheme = source_scheme
         self.cor_deleted_atts = {} 
         self.not_presented = {} 
-        self.corr = self.source_df.corr()
+        self.corr = self.source_df.corr(numeric_only=True)
 
         if result_df is None:
             self.operation_str = operation_str
