@@ -13,7 +13,7 @@ from fedex_generator.commons.utils import is_numeric, to_valid_latex
 
 
 
-usetex = matplotlib.checkdep_usetex(True)
+usetex = False#matplotlib.checkdep_usetex(True)
 print(f"usetex-{usetex}")
 rc('text', usetex=usetex)
 matplotlib.rcParams.update({'font.size': 16})
