@@ -132,6 +132,7 @@ class ArrayType(Enum):
 
 
 def get_array_type(array_like):
+    x = np.array(array_like)
     if np.array(array_like).dtype.name in CATEGORICAL_TYPES or np.array(array_like).dtype.name.startswith('str'):
         return ArrayType.Categorical
 

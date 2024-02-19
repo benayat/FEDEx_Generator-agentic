@@ -126,7 +126,7 @@ class CategoricalBin(Bin):
         return [v for (k, v) in col_values[:k]]
 
     def __init__(self, source_column, result_column, size):
-        self.result_values = self.get_top_k_values(result_column, size - 1)
+        self.result_values = self.get_top_k_values(result_column, 11 - 1)
         id_map_top_k = dict(zip(self.result_values, self.result_values))
 
         if source_column is not None:
@@ -166,12 +166,13 @@ class Bins(object):
     def __init__(self, source_column, result_column, bins_count):
         self.max_bin_count = bins_count
         self.bins = list(Bins.USER_BINNING_METHOD(source_column, result_column))
-
+        gb=False
         if Bins.ONLY_USER_BINS:
             return
 
         if source_column is None:
             # GroupBy
+            gb=True
             self.bins += self.get_multi_index_bins(source_column, result_column, bins_count)
             if len(self.bins) > 0:
                 return
@@ -180,6 +181,8 @@ class Bins(object):
             return
 
         if utils.is_numeric(result_column):
+            if gb:
+                result_column = result_column[:10]#change to most frequent 10
             self.bins += self.bin_numeric(source_column, result_column, bins_count)
         else:
             self.bins += self.bin_categorical(source_column, result_column, bins_count)
