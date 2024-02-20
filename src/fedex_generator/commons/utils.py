@@ -11,7 +11,15 @@ from fedex_generator.commons.kstest import *
 def to_valid_latex(string, is_bold: bool = False):
     latex_string = str(string)  # unicode_to_latex(string)
     space = r'\ ' if is_bold else ' '
-    return latex_string.replace("&", "\\&").replace("#", "\\#").replace(' ', space).replace("_", space)
+    final_str = latex_string.replace("&", "\\&").replace("#", "\\#").replace(' ', space).replace("_", space)
+    return final_str
+
+
+def to_valid_latex2(string, is_bold: bool = False):
+    latex_string = str(string)  # unicode_to_latex(string)
+    space = r'\ ' if is_bold else ' '
+    final_str = latex_string.replace("&", "\\&").replace("#", "\\#").replace(' ', space).replace("_", space).replace("$", "\\$")
+    return final_str
 
 
 def smart_round(number):

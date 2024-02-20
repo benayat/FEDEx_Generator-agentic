@@ -49,10 +49,10 @@ def draw_bar(x: list, y: list, avg_line=None, items_to_bold=None, head_values=No
             ax.text(col.get_x(), yval + .05, head_values[i])
 
     if xname is not None:
-        ax.set_xlabel(utils.to_valid_latex(xname), fontsize=16)
+        ax.set_xlabel(utils.to_valid_latex2(xname), fontsize=16)
 
     if yname is not None:
-        ax.set_ylabel(utils.to_valid_latex(yname), fontsize=16)
+        ax.set_ylabel(utils.to_valid_latex2(yname), fontsize=16)
 
 
 def flatten_other_indexes(series, main_index):
@@ -148,8 +148,8 @@ class DiversityMeasure(BaseMeasure):
 
         :return: new explanation
         """
-        max_group_value = list(binned_column[binned_column == max_value].to_dict().keys())[0]
-        max_value_name = binned_column.name.replace('_', '\\ ')
+        max_group_value = list(binned_column[binned_column == max_value].to_dict().keys())[0].replace('$', '\\$')
+        max_value_name = binned_column.name.replace('_', '\\ ').replace('$', '\\$')
         group_by_name = binned_column.to_frame().axes[0].name
 
         return explanation.replace(f'\'{max_value_name}\'=\'{max_value}\'',
@@ -240,9 +240,9 @@ class DiversityMeasure(BaseMeasure):
         sqr = np.sqrt(var)
         x = ((max_value_numeric - np.mean(res_col)) / sqr) if sqr != 0 else 0
 
-        group_by_text = utils.to_valid_latex(f"'{max_col_name}'='{max_value}'", True)
+        group_by_text = utils.to_valid_latex2(f"'{max_col_name}'='{max_value}'", True)
         proportion = 'low' if x < 0 else 'high'
-        proportion_column = utils.to_valid_latex(f"{proportion} '{res_col.name}'", True)
+        proportion_column = utils.to_valid_latex2(f"{proportion} '{res_col.name}'", True)
 
         expl = f"Groups with {START_BOLD}{group_by_text}{END_BOLD} (in green) \n" \
                f"have a relatively {START_BOLD}{proportion_column}{END_BOLD} value:\n" \
