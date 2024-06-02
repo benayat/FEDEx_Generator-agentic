@@ -222,18 +222,10 @@ class BaseMeasure(object):
             for ax in axes.reshape(-1):
                 ax.set_axis_off()
         else:
-            fig, axes = plt.subplots(figsize=(16, 16))
+            fig, axes = plt.subplots(figsize=(8, 8))
 
         title = title if title else self.build_operation_expression(source_name)
-        if title is not None:
-            print("replace to $$")
-        # Apply raw string formatting to each element in the DataFrame
-            title = title.replace('$', 'USD')
-            # title = title.replace({'\\': ' '}, regex=True)
-            # title = title.replace({'{': ' '}, regex=True)
-            # title = title.replace({'}': ' '}, regex=True)
-        #xname = xname.applymap(lambda x: rf"{x}")
-        # ax.set_xlabel(utils.to_valid_latex(xname), fontsize=16)
+
 
         fig.suptitle(title, fontsize=20)
 

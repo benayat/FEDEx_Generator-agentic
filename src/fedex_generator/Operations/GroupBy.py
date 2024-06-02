@@ -6,15 +6,17 @@ from fedex_generator.commons.DatasetRelation import DatasetRelation
 from fedex_generator.Operations import Operation
 from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 from fedex_generator.Measures.DiversityMeasure import DiversityMeasure
+from fedex_generator.Measures.OutlierMeasure import OutlierMeasure
 
 
 class GroupBy(Operation.Operation):
-    def __init__(self, source_df, source_scheme, group_attributes, agg_dict, result_df=None, source_name=None):
+    def __init__(self, source_df, source_scheme, group_attributes, agg_dict, result_df=None, source_name=None, operation=None):
         super().__init__(source_scheme)
         self.source_scheme = source_scheme
         self.group_attributes = group_attributes
         self.agg_dict = agg_dict
         self.source_name = source_name
+        self.source_df = source_df
         if result_df is None:
             self.source_name = utils.get_calling_params_name(source_df)
             source_df = source_df.reset_index()
@@ -22,7 +24,7 @@ class GroupBy(Operation.Operation):
             self.result_df = source_df.groupby(group_attributes).agg(agg_dict)
         else:
             self.result_df = result_df
-        self.result_df.columns = self._get_columns_names()
+        # self.result_df.columns = self._get_columns_names()
 
     def iterate_attributes(self):
         for attr in self.result_df.columns:
@@ -33,7 +35,7 @@ class GroupBy(Operation.Operation):
     def get_source_col(self, filter_attr, filter_values, bins):
         return None
 
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
+    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None,
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
         """
         Explain for group by operation
@@ -46,6 +48,17 @@ class GroupBy(Operation.Operation):
 
         :return: explain figures
         """
+        if explainer == 'outlier':
+            res_col = None
+            measure = OutlierMeasure()
+
+            for attr, dataset_relation in self.iterate_attributes():
+                _, res_col = OutlierMeasure.get_source_and_res_cols(dataset_relation, attr)
+            # print(self.group_attributes, self.source_df.name)
+            agg_funcs = list(self.agg_dict.keys())[0]
+            agg_func = agg_funcs            
+            # (self, df_agg, df_in, g_att, g_agg, target)
+            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_func, target)
         if schema is None:
             schema = {}
 
