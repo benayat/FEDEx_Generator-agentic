@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -167,18 +168,22 @@ class OutlierMeasure(BaseMeasure):
                f" is {self.calc_var(result_col)}"
 
     def std_int(self, df, target):
-        dev = abs(df[target]-df.mean())
-        return dev/df.std()
-    def calc_influence_std(self, df_agg, df_ex, g_att, g_agg, target):
+        try:
+            dev = abs(df[target]-df.mean())
+            return dev/df.std()
+        except:
+            return 10
+
+    def calc_influence_std(self, df_agg, df_ex, g_att, g_agg, agg_method, target):
         # try:
-            exc_std = self.std_int(df_ex.groupby(g_att)[g_agg].mean(), target) 
-            val = df_agg[2020]
+            grouped = df_ex.groupby([g_att])
+            agged = grouped[g_agg].agg(agg_method)
+            exc_std = self.std_int(agged, target) 
             previous_std = self.std_int(df_agg, target)
-            return abs(exc_std- previous_std)
+            return (previous_std/exc_std)/(agged.std()*agged.std())
         # except:
         #     return 0
-    def explain_outlier(self, df_agg, df_in, g_att, g_agg, target):
-        print(df_agg[2020])
+    def explain_outlier(self, df_agg, df_in, g_att, g_agg, agg_method, target):
         attrs = df_in.select_dtypes(include='number').columns.tolist()[:10]
         attrs = [a for a in attrs if a not in [g_att, g_agg]]
         top_bin_all = None
@@ -188,17 +193,18 @@ class OutlierMeasure(BaseMeasure):
         for attr in attrs:
             ser = df_in[attr]
             type = df_in[attr].dtype.name
+            flag = False
             if type == 'int64':
                 vals = ser.value_counts()
-                if len(vals)> 15:
-                    _, bins = pd.cut(ser, 10, retbins=True, duplicates='drop')
-                else:
+                
+                if len(vals)< 15:
+                    flag = True
                     top_df = None
                     top_inf = 0
                     top_bin = None
                     for i in vals.index:
                         df_in_exc = df_in[df_in[attr] != i]
-                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, target)/(df_in.id.count()/df_in_exc.id.count())
+                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/(df_in[attr].count()/df_in_exc[attr].count())
                         if inf > top_inf:
                             top_inf = inf
                             top_bin = i
@@ -209,8 +215,26 @@ class OutlierMeasure(BaseMeasure):
                         top_attr = attr
                         df = top_df
                             
-            else:
-                _, bins = pd.cut(ser, 10, retbins=True, duplicates='drop')
+            if not flag:
+                for n in [5,10,20]:
+                    _, bins = pd.cut(ser, n, retbins=True, duplicates='drop')
+                    df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index()#.rename('idx')
+                    top_df = None
+                    top_inf = 0
+                    top_bin = None
+                    for bin in df_bins_in.keys():
+                        df_in_exc = df_in[(df_in[attr] < bin.left) | (df_in[attr] >= bin.right)]
+                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/np.sqrt(df_in[attr].count()/df_in_exc[attr].count())
+                        if inf > top_inf:
+                            top_inf = inf
+                            top_bin = bin
+                            top_df = df_in_exc.groupby([g_att])[g_agg].agg(agg_method)
+                    if top_inf > top_inf_all:
+                        top_inf_all = top_inf
+                        top_bin_all = top_bin
+                        top_attr = attr
+                        df = top_df
+
             # df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index().rename(df_in.id)
             # top_inf = 0
             # top_bin = None
@@ -231,31 +255,36 @@ class OutlierMeasure(BaseMeasure):
 
         # print(f'overall, the top contributing bin is {top_bin_all} of {top_attr}. influence {top_inf_all}')
         # df = df_in[(df_in[top_attr] < top_bin_all.left)|(df_in[top_attr] > top_bin_all.right)].groupby(g_att)[g_agg].mean()
-        # fig, ax = plt.subplots(layout='constrained', figsize=(7, 7))
+        fig, ax = plt.subplots(layout='constrained', figsize=(7, 7))
         x1 = list(df_agg.index)
         ind1 = np.arange(len(x1))
         y1 = df_agg.values
+        
     
         x2 = list(df.index)
         ind2 = np.arange(len(x2))
         y2 = df.values
+        if agg_method == 'count':
+            y1 = y1/y1.sum()
+            y2 = y2/y2.sum()
         explanation = f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier.'
-        return explanation
     
-    #     bar1 = ax.bar(ind1-0.2, y1, 0.4, alpha=1., label='All')
-    #     bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label='Without (\'Explicit\' = 0)')
-    #     ax.set_ylabel(f'{g_agg} (mean)')
-    #     ax.set_xlabel(f'{g_att}')
-    #     ax.set_xticks(ind1)
-    #     ax.set_xticklabels(tuple([str(i) for i in x1]), rotation=45)
-    #     ax.legend(loc='best')
-    #     ax.set_title('The predicate (\'Explicit\' = 0) has high influence on this outlier')
-    # # items_to_bold=[target]
-    #     bar1[x1.index(target)].set_edgecolor('tab:green')
-    #     bar1[x1.index(target)].set_linewidth(2)
-    #     bar2[x2.index(target)].set_edgecolor('tab:green')
-    #     bar2[x2.index(target)].set_linewidth(2)
-    #     ax.get_xticklabels()[-1].set_color('tab:green')
+        bar1 = ax.bar(ind1-0.2, y1, 0.4, alpha=1., label='All')
+        bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label=f'Without (\'{top_attr}\' = {top_bin_all})')
+        ax.set_ylabel(f'{g_agg} {agg_method}')
+        ax.set_xlabel(f'{g_att}')
+        ax.set_xticks(ind1)
+        ax.set_xticklabels(tuple([str(i) for i in x1]), rotation=45)
+        ax.legend(loc='best')
+        ax.set_title(f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier')
+    # items_to_bold=[target]
+        bar1[x1.index(target)].set_edgecolor('tab:green')
+        bar1[x1.index(target)].set_linewidth(2)
+        bar2[x2.index(target)].set_edgecolor('tab:green')
+        bar2[x2.index(target)].set_linewidth(2)
+        ax.get_xticklabels()[x1.index(target)].set_color('tab:green')
+        return explanation
+
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
         res_col = current_bin.get_binned_result_column()
         if utils.is_categorical(res_col):

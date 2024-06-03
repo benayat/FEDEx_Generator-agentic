@@ -55,10 +55,10 @@ class GroupBy(Operation.Operation):
             for attr, dataset_relation in self.iterate_attributes():
                 _, res_col = OutlierMeasure.get_source_and_res_cols(dataset_relation, attr)
             # print(self.group_attributes, self.source_df.name)
-            agg_funcs = list(self.agg_dict.keys())[0]
-            agg_func = agg_funcs            
+            agg = list(self.agg_dict.items())[0]
+            agg_attr, agg_method = agg[0],agg[1][0]          
             # (self, df_agg, df_in, g_att, g_agg, target)
-            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_func, target)
+            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target)
         if schema is None:
             schema = {}
 
