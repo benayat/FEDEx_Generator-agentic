@@ -13,7 +13,7 @@ from fedex_generator.commons.utils import is_numeric, to_valid_latex
 
 
 
-usetex = matplotlib.checkdep_usetex(True)
+usetex = False#matplotlib.checkdep_usetex(True)
 print(f"usetex-{usetex}")
 rc('text', usetex=usetex)
 matplotlib.rcParams.update({'font.size': 16})
@@ -222,9 +222,11 @@ class BaseMeasure(object):
             for ax in axes.reshape(-1):
                 ax.set_axis_off()
         else:
-            fig, axes = plt.subplots(figsize=(7, 7))
+            fig, axes = plt.subplots(figsize=(8, 8))
 
         title = title if title else self.build_operation_expression(source_name)
+
+
         fig.suptitle(title, fontsize=20)
 
         for index, (explanation, current_bin, current_influence_vals, score) in enumerate(

@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -65,7 +66,7 @@ def flatten_other_indexes(series, main_index):
     return df[df.columns[0]]
 
 
-class DiversityMeasure(BaseMeasure):
+class OutlierMeasure(BaseMeasure):
     def __init__(self):
         super().__init__()
 
@@ -166,54 +167,123 @@ class DiversityMeasure(BaseMeasure):
                (f" was {self.calc_var(source_col)} and now it " if source_col is not None else "") + \
                f" is {self.calc_var(result_col)}"
 
-    def calc_influence_col(self, current_bin: Bin):
-        bin_values = current_bin.get_bin_values()
-        source_col = current_bin.get_source_by_values(bin_values)
-        res_col = current_bin.get_result_by_values(bin_values)
-        score_all = self.calc_diversity(source_col, res_col)
+    def std_int(self, df, target):
+        try:
+            dev = abs(df[target]-df.mean())
+            return dev/df.std()
+        except:
+            return 10
 
-        influence = []
-        for value in bin_values:
-            source_col_only_list = current_bin.get_source_by_values([b for b in bin_values if b != value])
-            res_col_only_list = current_bin.get_result_by_values([b for b in bin_values if b != value])
+    def calc_influence_std(self, df_agg, df_ex, g_att, g_agg, agg_method, target):
+        # try:
+            grouped = df_ex.groupby([g_att])
+            agged = grouped[g_agg].agg(agg_method)
+            exc_std = self.std_int(agged, target) 
+            previous_std = self.std_int(df_agg, target)
+            return (previous_std/exc_std)/(agged.std()*agged.std())
+        # except:
+        #     return 0
+    def explain_outlier(self, df_agg, df_in, g_att, g_agg, agg_method, target):
+        attrs = df_in.select_dtypes(include='number').columns.tolist()[:10]
+        attrs = [a for a in attrs if a not in [g_att, g_agg]]
+        top_bin_all = None
+        top_inf_all = 0
+        top_attr = None
+        df = None
+        for attr in attrs:
+            ser = df_in[attr]
+            type = df_in[attr].dtype.name
+            flag = False
+            if type == 'int64':
+                vals = ser.value_counts()
+                
+                if len(vals)< 15:
+                    flag = True
+                    top_df = None
+                    top_inf = 0
+                    top_bin = None
+                    for i in vals.index:
+                        df_in_exc = df_in[df_in[attr] != i]
+                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/(df_in[attr].count()/df_in_exc[attr].count())
+                        if inf > top_inf:
+                            top_inf = inf
+                            top_bin = i
+                            top_df = df_in_exc.groupby(g_att)[g_agg].mean()
+                    if top_inf > top_inf_all:
+                        top_inf_all = top_inf
+                        top_bin_all = top_bin
+                        top_attr = attr
+                        df = top_df
+                            
+            if not flag:
+                for n in [5,10,20]:
+                    _, bins = pd.cut(ser, n, retbins=True, duplicates='drop')
+                    df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index()#.rename('idx')
+                    top_df = None
+                    top_inf = 0
+                    top_bin = None
+                    for bin in df_bins_in.keys():
+                        df_in_exc = df_in[(df_in[attr] < bin.left) | (df_in[attr] >= bin.right)]
+                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/np.sqrt(df_in[attr].count()/df_in_exc[attr].count())
+                        if inf > top_inf:
+                            top_inf = inf
+                            top_bin = bin
+                            top_df = df_in_exc.groupby([g_att])[g_agg].agg(agg_method)
+                    if top_inf > top_inf_all:
+                        top_inf_all = top_inf
+                        top_bin_all = top_bin
+                        top_attr = attr
+                        df = top_df
 
-            score_without_bin = self.calc_diversity(source_col_only_list, res_col_only_list)
-            influence.append(score_all - score_without_bin)
+            # df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index().rename(df_in.id)
+            # top_inf = 0
+            # top_bin = None
+            # for bin in df_bins_in.keys():
+            # # print(bin.left, bin.right)
+                # df_in_exc = df_in[(df_in[attr] < bin.left)|(df_in[attr] > bin.right)]
+            # # print(df_in_exc.head())
+            #     inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, target)/(df_in.id.count()/df_in_exc.id.count())
+            #     if inf > top_inf:
+            #         top_inf = inf
+            #         top_bin = bin
+            # # print(f'bin of {attr}: {bin}, influence: {inf}')
+            # # print(f'most influencing bin of {attr}: {top_bin}, influence: {top_inf}')
+            # if top_inf > top_inf_all:
+            #     top_inf_all = top_inf
+            #     top_bin_all = top_bin
+            #     top_attr = attr
 
-        return influence
-
-    def calc_var(self, pd_array):
-        if utils.is_numeric(pd_array):
-            return np.var(pd_array)
-
-        appearances = (pd_array.value_counts()).to_numpy()
-        mean = np.mean(appearances)
-        return np.sum(np.power(appearances - mean, 2)) / len(appearances)
-
-    def calc_diversity(self, source_col, res_col):
-        var_res = self.calc_var(res_col)
-
-        if source_col is not None:
-            var_rel = self.calc_var(source_col)
-        else:
-            var_rel = 1.
-
-        res = (var_res / var_rel) if var_rel != 0 else (0. if var_res == 0 else var_res)
-        return 0 if np.isnan(res) else res
-
-    def calc_measure_internal(self, bin: Bin):
-        result_column = bin.get_binned_result_column().dropna()
-        if bin.name == "MultiIndexBin":
-            operation = self.get_agg_func_from_name(result_column.name)
-            result_column = result_column.groupby(bin.get_bin_name()).agg(operation)
-        return self.calc_diversity(None if bin.source_column is None else bin.source_column.dropna(),
-                                   result_column)
-
-    def build_operation_expression(self, source_name):
-        from fedex_generator.Operations.GroupBy import GroupBy
-        if isinstance(self.operation_object, GroupBy):
-            return f'{source_name}.groupby({self.operation_object.group_attributes})' \
-                   f'.agg({self.operation_object.agg_dict})'
+        # print(f'overall, the top contributing bin is {top_bin_all} of {top_attr}. influence {top_inf_all}')
+        # df = df_in[(df_in[top_attr] < top_bin_all.left)|(df_in[top_attr] > top_bin_all.right)].groupby(g_att)[g_agg].mean()
+        fig, ax = plt.subplots(layout='constrained', figsize=(7, 7))
+        x1 = list(df_agg.index)
+        ind1 = np.arange(len(x1))
+        y1 = df_agg.values
+        
+    
+        x2 = list(df.index)
+        ind2 = np.arange(len(x2))
+        y2 = df.values
+        if agg_method == 'count':
+            y1 = y1/y1.sum()
+            y2 = y2/y2.sum()
+        explanation = f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier.'
+    
+        bar1 = ax.bar(ind1-0.2, y1, 0.4, alpha=1., label='All')
+        bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label=f'Without (\'{top_attr}\' = {top_bin_all})')
+        ax.set_ylabel(f'{g_agg} {agg_method}')
+        ax.set_xlabel(f'{g_att}')
+        ax.set_xticks(ind1)
+        ax.set_xticklabels(tuple([str(i) for i in x1]), rotation=45)
+        ax.legend(loc='best')
+        ax.set_title(f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier')
+    # items_to_bold=[target]
+        bar1[x1.index(target)].set_edgecolor('tab:green')
+        bar1[x1.index(target)].set_linewidth(2)
+        bar2[x2.index(target)].set_edgecolor('tab:green')
+        bar2[x2.index(target)].set_linewidth(2)
+        ax.get_xticklabels()[x1.index(target)].set_color('tab:green')
+        return explanation
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
         res_col = current_bin.get_binned_result_column()
