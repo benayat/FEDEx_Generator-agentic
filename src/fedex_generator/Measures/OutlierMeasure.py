@@ -167,30 +167,37 @@ class OutlierMeasure(BaseMeasure):
                (f" was {self.calc_var(source_col)} and now it " if source_col is not None else "") + \
                f" is {self.calc_var(result_col)}"
 
-    def std_int(self, df, target):
+    def std_int(self, target, df):
         try:
-            dev = abs(df[target]-df.mean())
+            dev = abs(target-df.mean())
             return dev/df.std()
         except:
             return 10
 
-    def calc_influence_std(self, df_agg, df_ex, g_att, g_agg, agg_method, target):
+    def calc_influence_std(self, df_agg, df_ex_agg, g_att, g_agg, agg_method, target):
         # try:
-            grouped = df_ex.groupby([g_att])
-            agged = grouped[g_agg].agg(agg_method)
-            exc_std = self.std_int(agged, target) 
-            previous_std = self.std_int(df_agg, target)
-            return (previous_std/exc_std)/(agged.std()*agged.std())
+            exc_std = 0
+            consider = [v for v in list(df_agg.index) if v not in target]
+            df_agg_consider = df_agg[consider]
+            for t in target:
+                exc_std += self.std_int(df_ex_agg[t], df_agg_consider)
+            exc_std /= len(target) 
+            # previous_std = self.std_int(df_agg, target)
+            return(1/abs(exc_std))
         # except:
         #     return 0
-    def explain_outlier(self, df_agg, df_in, g_att, g_agg, agg_method, target):
+    def explain_outlier(self, df_agg, df_in, g_att, g_agg, agg_method, target, k=1):
         attrs = df_in.select_dtypes(include='number').columns.tolist()[:10]
         attrs = [a for a in attrs if a not in [g_att, g_agg]]
+        exps = {}
+        worst = 0
         top_bin_all = None
         top_inf_all = 0
         top_attr = None
         df = None
         for attr in attrs:
+            if attr=='loudness':
+                pass
             ser = df_in[attr]
             type = df_in[attr].dtype.name
             flag = False
@@ -203,72 +210,64 @@ class OutlierMeasure(BaseMeasure):
                     top_inf = 0
                     top_bin = None
                     for i in vals.index:
-                        df_in_exc = df_in[df_in[attr] != i]
-                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/(df_in[attr].count()/df_in_exc[attr].count())
+                        df_in_target_exc = df_in[((df_in[g_att].isin(target))&(df_in[attr] != i))]
+                        agged_val = df_in_target_exc.groupby(g_att)[g_agg].agg(agg_method)
+                        agged_df = df_agg.copy()
+                        agged_df[target]=agged_val
+                        inf = self.calc_influence_std(df_agg, agged_df, g_att, g_agg, agg_method,target)#/(df_in[attr].count()/df_in_exc[attr].count())
+                        exps[(attr,i)]=inf
                         if inf > top_inf:
                             top_inf = inf
                             top_bin = i
-                            top_df = df_in_exc.groupby(g_att)[g_agg].mean()
+                            top_df = agged_df
                     if top_inf > top_inf_all:
                         top_inf_all = top_inf
                         top_bin_all = top_bin
                         top_attr = attr
                         df = top_df
+                    
                             
             if not flag:
-                for n in [5,10,20]:
+                for n in [5,10]:
                     _, bins = pd.cut(ser, n, retbins=True, duplicates='drop')
                     df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index()#.rename('idx')
                     top_df = None
                     top_inf = 0
                     top_bin = None
                     for bin in df_bins_in.keys():
-                        df_in_exc = df_in[(df_in[attr] < bin.left) | (df_in[attr] >= bin.right)]
-                        inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, agg_method,target)#/np.sqrt(df_in[attr].count()/df_in_exc[attr].count())
+                        df_in_exc = df_in[((df_in[g_att].isin(target)) & ((df_in[attr] < bin.left) | (df_in[attr] >= bin.right)))]
+                        agged_val = df_in_exc.groupby(g_att)[g_agg].agg(agg_method)
+                        agged_df = df_agg.copy()
+                        agged_df[target]=agged_val
+                        inf = self.calc_influence_std(df_agg, agged_df, g_att, g_agg, agg_method,target)#/np.sqrt(df_in[attr].count()/df_in_exc[attr].count())
+                        exps[(attr,(bin.left,bin.right))]=inf
                         if inf > top_inf:
                             top_inf = inf
                             top_bin = bin
-                            top_df = df_in_exc.groupby([g_att])[g_agg].agg(agg_method)
+                            top_df = agged_df
                     if top_inf > top_inf_all:
                         top_inf_all = top_inf
                         top_bin_all = top_bin
                         top_attr = attr
                         df = top_df
+            if top_inf_all >= 1:
+                        break
 
-            # df_bins_in = pd.cut(df_in[attr], bins=bins).value_counts(normalize=True).sort_index().rename(df_in.id)
-            # top_inf = 0
-            # top_bin = None
-            # for bin in df_bins_in.keys():
-            # # print(bin.left, bin.right)
-                # df_in_exc = df_in[(df_in[attr] < bin.left)|(df_in[attr] > bin.right)]
-            # # print(df_in_exc.head())
-            #     inf = self.calc_influence_std(df_agg, df_in_exc, g_att, g_agg, target)/(df_in.id.count()/df_in_exc.id.count())
-            #     if inf > top_inf:
-            #         top_inf = inf
-            #         top_bin = bin
-            # # print(f'bin of {attr}: {bin}, influence: {inf}')
-            # # print(f'most influencing bin of {attr}: {top_bin}, influence: {top_inf}')
-            # if top_inf > top_inf_all:
-            #     top_inf_all = top_inf
-            #     top_bin_all = top_bin
-            #     top_attr = attr
-
-        # print(f'overall, the top contributing bin is {top_bin_all} of {top_attr}. influence {top_inf_all}')
-        # df = df_in[(df_in[top_attr] < top_bin_all.left)|(df_in[top_attr] > top_bin_all.right)].groupby(g_att)[g_agg].mean()
         fig, ax = plt.subplots(layout='constrained', figsize=(7, 7))
         x1 = list(df_agg.index)
         ind1 = np.arange(len(x1))
         y1 = df_agg.values
         
-    
+
         x2 = list(df.index)
         ind2 = np.arange(len(x2))
         y2 = df.values
         if agg_method == 'count':
+            agg_method ='proportion'
             y1 = y1/y1.sum()
             y2 = y2/y2.sum()
-        explanation = f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier.'
-    
+        explanation = f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier({top_inf_all}).'
+
         bar1 = ax.bar(ind1-0.2, y1, 0.4, alpha=1., label='All')
         bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label=f'Without (\'{top_attr}\' = {top_bin_all})')
         ax.set_ylabel(f'{g_agg} {agg_method}')
@@ -278,11 +277,12 @@ class OutlierMeasure(BaseMeasure):
         ax.legend(loc='best')
         ax.set_title(f'The predicate (\'{top_attr}\' = {top_bin_all}) has high influence on this outlier')
     # items_to_bold=[target]
-        bar1[x1.index(target)].set_edgecolor('tab:green')
-        bar1[x1.index(target)].set_linewidth(2)
-        bar2[x2.index(target)].set_edgecolor('tab:green')
-        bar2[x2.index(target)].set_linewidth(2)
-        ax.get_xticklabels()[x1.index(target)].set_color('tab:green')
+        for t in target:
+            bar1[x1.index(t)].set_edgecolor('tab:green')
+            bar1[x1.index(t)].set_linewidth(2)
+            bar2[x2.index(t)].set_edgecolor('tab:green')
+            bar2[x2.index(t)].set_linewidth(2)
+            ax.get_xticklabels()[x1.index(t)].set_color('tab:green')
         return explanation
 
     def build_explanation(self, current_bin: Bin, max_col_name, max_value, source_name):
