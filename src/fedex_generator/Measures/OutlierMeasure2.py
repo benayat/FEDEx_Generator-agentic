@@ -39,7 +39,7 @@ class OutlierMeasure(BaseMeasure):
             else:
                 df_exc = df_final[df_final[attr] != i]
             agged_val = df_exc.groupby(g_att)[g_agg].agg(agg_method)
-            inf = self.calc_influence_pred(df_agg, agged_val, target, dir)
+            inf = self.calc_influence_pred(df_agg, agged_val, target, dir)/np.sqrt(df_in.shape[0]/df_exc.shape[0])
             if inf/final_inf>1.1:
                 final_pred.append((attr, i, rank))
                 final_inf = inf
@@ -66,6 +66,8 @@ class OutlierMeasure(BaseMeasure):
         df_agg_consider = df_agg[control]
         df_agg_consider[target] = df_agg[target]
         for attr in attrs:
+            if df_in[g_agg].corr(df_in[attr]) > 0.8:
+                continue
             # if attr=='duration_minutes':
             #     pass
             series = df_in[attr]
@@ -86,7 +88,7 @@ class OutlierMeasure(BaseMeasure):
                         agged_val = df_in_target_exc.groupby(g_att)[g_agg].agg(agg_method)
                         # agged_df = df_agg.copy()
                         # agged_df[target]=agged_val
-                        inf = self.calc_influence_pred(df_agg_consider, agged_val,target, dir)#/(df_in[attr].count()/df_in_exc[attr].count())
+                        inf = self.calc_influence_pred(df_agg_consider, agged_val,target, dir)/np.sqrt(df_in_consider.shape[0]/df_in_target_exc.shape[0])
                         exps[(attr,i)]=inf
                         # if inf > top_inf:
                         #     top_inf = inf
@@ -115,7 +117,7 @@ class OutlierMeasure(BaseMeasure):
                         agged_val = df_in_exc.groupby(g_att)[g_agg].agg(agg_method)
                         # agged_df = df_agg.copy()
                         # agged_df[target]=agged_val
-                        inf = self.calc_influence_pred(df_agg_consider, agged_val, target, dir)#/np.sqrt(df_in[attr].count()/df_in_exc[attr].count())
+                        inf = self.calc_influence_pred(df_agg_consider, agged_val, target, dir)/np.sqrt(df_in_consider.shape[0]/df_in_exc.shape[0])
                         exps[(attr,(new_bin[0],new_bin[1]))]=inf
                         # if inf > top_inf:
                         #     top_inf = inf
