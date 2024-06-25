@@ -6,7 +6,7 @@ from fedex_generator.commons.DatasetRelation import DatasetRelation
 from fedex_generator.Operations import Operation
 from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 from fedex_generator.Measures.DiversityMeasure import DiversityMeasure
-from fedex_generator.Measures.OutlierMeasure import OutlierMeasure
+from fedex_generator.Measures.OutlierMeasure2 import OutlierMeasure
 
 
 class GroupBy(Operation.Operation):
@@ -35,7 +35,7 @@ class GroupBy(Operation.Operation):
     def get_source_col(self, filter_attr, filter_values, bins):
         return None
 
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None,
+    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None,
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
         """
         Explain for group by operation
@@ -58,7 +58,7 @@ class GroupBy(Operation.Operation):
             agg = list(self.agg_dict.items())[0]
             agg_attr, agg_method = agg[0],agg[1][0]          
             # (self, df_agg, df_in, g_att, g_agg, target)
-            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target)
+            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target, dir, control)
         if schema is None:
             schema = {}
 
