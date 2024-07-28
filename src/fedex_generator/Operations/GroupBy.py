@@ -35,7 +35,7 @@ class GroupBy(Operation.Operation):
     def get_source_col(self, filter_attr, filter_values, bins):
         return None
 
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None,
+    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None, hold_out=[],
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
         """
         Explain for group by operation
@@ -56,9 +56,13 @@ class GroupBy(Operation.Operation):
                 _, res_col = OutlierMeasure.get_source_and_res_cols(dataset_relation, attr)
             # print(self.group_attributes, self.source_df.name)
             agg = list(self.agg_dict.items())[0]
-            agg_attr, agg_method = agg[0],agg[1][0]          
+            agg_attr, agg_method = agg[0],agg[1][0]        
+            if dir == 'high':
+                dir = 1
+            elif dir == 'low':
+                dir = -1  
             # (self, df_agg, df_in, g_att, g_agg, target)
-            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target, dir, control)
+            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target, dir, control, hold_out)
         if schema is None:
             schema = {}
 
