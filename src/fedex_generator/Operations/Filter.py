@@ -38,7 +38,10 @@ class Filter(Operation.Operation):
             self.result_df = self.source_df[do_operation(self.source_df[attribute], value, operation_str)]
         else:
             self.result_df = result_df
+            self.result_name = utils.get_calling_params_name(result_df)
+            # result_df.name = self.result_name
         self.source_name = utils.get_calling_params_name(source_df)
+        # source_df.name = self.source_name
     
     def get_correlated_attributes(self):
         numeric_df = self.source_df.head(10000)  # for performance we take part of the DB
