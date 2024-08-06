@@ -42,7 +42,9 @@ def format_bin_item(item):
 def max_key(d):
     return max(d.items(), key=operator.itemgetter(1))[0]
 
-
+def get_df_name(df):
+    name =[x for x in globals() if globals()[x] is df][0]
+    return name
 def remove_dropped_rows_from_source(source_df, result_df, nan_arr):
     result_df_dropped = result_df[np.isnan(nan_arr)]
     dropped_indices = result_df_dropped.index

@@ -6,7 +6,7 @@ from fedex_generator.commons.DatasetRelation import DatasetRelation
 from fedex_generator.Operations import Operation
 from fedex_generator.Measures.NormalizedDiversityMeasure import NormalizedDiversityMeasure
 from fedex_generator.Measures.DiversityMeasure import DiversityMeasure
-from fedex_generator.Measures.OutlierMeasure2 import OutlierMeasure
+from fedex_generator.Measures.OutlierMeasure import OutlierMeasure
 
 
 class GroupBy(Operation.Operation):
@@ -17,6 +17,7 @@ class GroupBy(Operation.Operation):
         self.agg_dict = agg_dict
         self.source_name = source_name
         self.source_df = source_df
+        self.source_name = utils.get_calling_params_name(source_df)
         if result_df is None:
             self.source_name = utils.get_calling_params_name(source_df)
             source_df = source_df.reset_index()
@@ -24,6 +25,8 @@ class GroupBy(Operation.Operation):
             self.result_df = source_df.groupby(group_attributes).agg(agg_dict)
         else:
             self.result_df = result_df
+            self.result_name = utils.get_calling_params_name(result_df)
+            # result_df.name = self.result_name
         # self.result_df.columns = self._get_columns_names()
 
     def iterate_attributes(self):
