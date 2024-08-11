@@ -159,8 +159,12 @@ class ShapleyMeasure(BaseMeasure):
         axes[1].axis('off')
         d1_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d1.df_name, True))
         d2_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d2.df_name, True))
+        if consider == 'left':
+            consider = d1_name
+        else:
+            consider = d2_name
         bold_attr = r'$\bf{{{}}}$'.format(utils.to_valid_latex(attr), True)
-        explanation = f'The result of joining dataframes {d1_name} and {d2_name} on attribute {bold_attr} is {r'$\bf{not\ empty}$'}.\nThe following fact from dataframe {d1_name} has significantly contributed to this result:\n'
+        explanation = f'The result of joining dataframes {d1_name} and {d2_name} on attribute {bold_attr} is {r'$\bf{not\ empty}$'}.\nThe following fact from dataframe {consider} has significantly contributed to this result:\n'
         fact_exp = ''
         for k, v in top_fact.reset_index().to_dict().items():
             v = r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))

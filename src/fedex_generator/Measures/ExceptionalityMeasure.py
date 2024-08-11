@@ -33,9 +33,9 @@ class ExceptionalityMeasure(BaseMeasure):
         width = 0.35
         ind = np.arange(len(labels))
 
-        result_bar = ax.bar(ind + width, probabilities2, width, label="After")
+        result_bar = ax.bar(ind + width, probabilities2, width, label="After Filter")
 
-        ax.bar(ind, probabilities, width, label="Before")
+        ax.bar(ind, probabilities, width, label="Before Filter")
         ax.legend(loc='best')
         if influence_vals:
             max_label, _ = self.get_max_k(influence_vals, 1)
