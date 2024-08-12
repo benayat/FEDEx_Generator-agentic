@@ -46,18 +46,7 @@ class BJoin(Operation.Operation):
 
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, consider='left'):
-        """
-        Explain for filter operation
 
-        :param schema: dictionary with new columns names, in case {'col_name': 'i'} will be ignored in the explanation
-        :param attributes: only this attributes will be included in the explanation calculation
-        :param top_k: top k explanations number, default one explanation only.
-        :param show_scores: show scores on explanation
-        :param figs_in_row: number of explanations figs in one row
-        :param title: explanation title
-
-        :return: explain figures
-        """
         if attributes is None:
             attributes = []
 
@@ -78,7 +67,4 @@ class BJoin(Operation.Operation):
             exp += '\n and then\n'
             exp += str(facts[fact_idx][0])
             top_k -= 1
-        # print(facts)
-        # for i in facts.index:
-            # exp += f'  {i}=\'{facts[i]}\'\n'
         return 

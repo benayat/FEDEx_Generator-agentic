@@ -31,6 +31,7 @@ class Filter(Operation.Operation):
         self.cor_deleted_atts = {} 
         self.not_presented = {} 
         self.corr = self.source_df.corr(numeric_only=True)
+        self.type = 'filter'
 
         if result_df is None:
             self.operation_str = operation_str
@@ -89,7 +90,7 @@ class Filter(Operation.Operation):
 
     
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex'):
         """
         Explain for filter operation
 

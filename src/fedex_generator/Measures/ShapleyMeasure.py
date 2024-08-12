@@ -120,7 +120,8 @@ class ShapleyMeasure(BaseMeasure):
                     df_join = pd.merge(sdf1, sdf2, on=attr, how='inner')
                     if df_join.shape[0]:
                     # print(f'--------------------------------\n{sdf1}\n**************\n{sdf2}')
-                        total += 1
+                        # total += 1
+                        total += df_join.shape[0]
         return total
     
     @staticmethod
@@ -133,7 +134,7 @@ class ShapleyMeasure(BaseMeasure):
             excluding += ((math.factorial(k)*math.factorial(m - k - 1))/math.factorial(m)) * sat(d1_exc, d2, attr, cond, k)
         return including - excluding
     
-    def get_most_contributing_fact(self, op, d1, d2, attr, cond, consider):
+    def get_most_contributing_fact(self, op, d1, d2, attr, cond, consider='right'):
         self.consider = consider
         top_shapley = 0
         top_fact = None
@@ -153,10 +154,10 @@ class ShapleyMeasure(BaseMeasure):
                 top_shapley = v_shapley
                 top_fact = d1_consider[d1_consider.index == i]
     # print(f'The top fact here is:\n{str(top_fact)}')
-        fig, axes = plt.subplots(2, figsize=(12, 3))
+        fig, axes = plt.subplots(1, figsize=(14, 2))
 
-        axes[0].axis('off')
-        axes[1].axis('off')
+        axes.axis('off')
+        # axes[1].axis('off')
         d1_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d1.df_name, True))
         d2_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d2.df_name, True))
         if consider == 'left':
@@ -164,18 +165,24 @@ class ShapleyMeasure(BaseMeasure):
         else:
             consider = d2_name
         bold_attr = r'$\bf{{{}}}$'.format(utils.to_valid_latex(attr), True)
-        explanation = f'The result of joining dataframes {d1_name} and {d2_name} on attribute {bold_attr} is {r'$\bf{not\ empty}$'}.\nThe following fact from dataframe {consider} has significantly contributed to this result:\n'
+        explanation = f'The tuple '
         fact_exp = ''
+        i = 0
         for k, v in top_fact.reset_index().to_dict().items():
-            v = r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))
-            fact_exp += f'{k}={v} '
+            if i != 0:
+                explanation += ','
+            i += 1
+            # v = r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))
+            r'$\bf{{{}}}$'.format(utils.to_valid_latex(f'{k}={v[0]}', True))
+            explanation += f'{r'$\bf{{{}}}$'.format(utils.to_valid_latex(k, True))}={r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))}'
+        explanation += f'\nfrom DataFrame {consider} is {r'$\bf{very}$'} {r'$\bf{significant}$'} for this result.'
         props1 = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        axes[0].text(0.5, 0.5, explanation, transform=axes[0].transAxes, fontsize=14,
+        axes.text(0.5, 0.5, explanation, transform=axes.transAxes, fontsize=20,
         verticalalignment='center', horizontalalignment='center', bbox=props1)
 
         props2 = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        axes[1].text(0.5, 0.5, fact_exp, transform=axes[1].transAxes, fontsize=14,
-        verticalalignment='center', horizontalalignment='center', bbox=props2)
+        # axes[1].text(0.5, 0.5, fact_exp, transform=axes[1].transAxes, fontsize=14,
+        # verticalalignment='center', horizontalalignment='center', bbox=props2)
         fig.show()
         # txt = ax.text(x, y, n, fontsize=10)
         return top_fact, facts
