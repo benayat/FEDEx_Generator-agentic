@@ -86,6 +86,8 @@ class BaseMeasure(object):
         self.scheme = scheme
 
         for attr, dataset_relation in operation_object.iterate_attributes():
+            if attr == 'decade':
+                pass
             column_scheme = scheme.get(attr, "ni").lower()
             if column_scheme == "i":
                 continue

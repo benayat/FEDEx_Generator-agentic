@@ -179,10 +179,9 @@ class Bins(object):
 
         if source_column is not None and len(source_column) == 0 and len(result_column) == 0:
             return
-
         if utils.is_numeric(result_column):
-            if gb:
-                result_column = result_column[:10]#change to most frequent 10
+            if gb or (source_column.value_counts().shape[0] < 15 and result_column.value_counts().shape[0] < 15):
+                self.bins += self.bin_categorical(source_column, result_column, bins_count)
             self.bins += self.bin_numeric(source_column, result_column, bins_count)
         else:
             self.bins += self.bin_categorical(source_column, result_column, bins_count)
