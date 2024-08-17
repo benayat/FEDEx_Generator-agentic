@@ -223,7 +223,7 @@ class DiversityMeasure(BaseMeasure):
         if current_bin.name == "NumericBin":
             max_value_numeric = max_value
         elif current_bin.name == "CategoricalBin":
-            max_value_numeric = res_col.value_counts()[max_value]
+            max_value_numeric = max_value#res_col.value_counts()[max_value]
         elif current_bin.name == "MultiIndexBin":
             bin_values = current_bin.get_result_by_values([max_value])
             operation = self.get_agg_func_from_name(res_col.name)
@@ -244,14 +244,14 @@ class DiversityMeasure(BaseMeasure):
 
         sqr = np.sqrt(var)
         x = ((max_value_numeric - np.mean(res_col)) / sqr) if sqr != 0 else 0
-
+        print(f'max_value_numeric {max_value_numeric} - np.mean(res_col){np.mean(res_col)} / sqr{sqr}')
         group_by_text = utils.to_valid_latex2(f"'{max_col_name}'='{max_value}'", True)
         proportion = 'low' if x < 0 else 'high'
         proportion_column = utils.to_valid_latex2(f"{proportion} '{res_col.name}'", True)
 
         expl = f"Groups with {START_BOLD}{group_by_text}{END_BOLD} (in green) \n" \
                f"have a relatively {START_BOLD}{proportion_column}{END_BOLD} value:\n" \
-               f"{utils.smart_round(np.abs(x))} standard deviation {proportion} than the mean " \
+               f"{utils.smart_round(np.abs(x))} standard deviations {proportion}er than the mean\n" \
                f"({utils.smart_round(np.mean(res_col))})"
 
         return expl

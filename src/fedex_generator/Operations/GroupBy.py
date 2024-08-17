@@ -58,14 +58,21 @@ class GroupBy(Operation.Operation):
             for attr, dataset_relation in self.iterate_attributes():
                 _, res_col = OutlierMeasure.get_source_and_res_cols(dataset_relation, attr)
             # print(self.group_attributes, self.source_df.name)
-            agg = list(self.agg_dict.items())[0]
+            try:
+                agg = list(self.agg_dict.items())[0]
+            except:
+                agg = self.agg_dict.items()
             agg_attr, agg_method = agg[0],agg[1][0]        
             if dir == 'high':
                 dir = 1
             elif dir == 'low':
                 dir = -1  
             # (self, df_agg, df_in, g_att, g_agg, target)
-            return measure.explain_outlier(res_col, self.source_df, self.group_attributes[0], agg_attr, agg_method, target, dir, control, hold_out)
+            if type(self.group_attributes) == list:
+                g_attr = self.group_attributes[0]
+            else:
+                g_attr = self.group_attributes
+            return measure.explain_outlier(res_col, self.source_df, g_attr, agg_attr, agg_method, target, dir, control, hold_out)
         if schema is None:
             schema = {}
 
