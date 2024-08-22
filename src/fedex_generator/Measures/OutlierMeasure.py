@@ -190,7 +190,7 @@ class OutlierMeasure(BaseMeasure):
             if a not in final_pred_by_attr.keys():
                 final_pred_by_attr[a] = []    
             final_pred_by_attr[a].append((i, rank))
-        fig, ax = plt.subplots(layout='constrained', figsize=(7, 7))
+        fig, ax = plt.subplots(layout='constrained', figsize=(5, 5))
         x1 = list(df_agg.index)
         ind1 = np.arange(len(x1))
         y1 = df_agg.values
@@ -215,7 +215,7 @@ class OutlierMeasure(BaseMeasure):
         bold_g_agg = r'$\bf{{{}}}$'.format(utils.to_valid_latex(g_agg))
         bold_g_att_target = r'$\bf{{{}}}$'.format(utils.to_valid_latex(f'{g_att}={target}'))
 
-        explanation = f'This outlier might be caused by rows with:\n'
+        explanation = f'This outlier is not as significant when excluding rows with:\n'
         for a, bins in final_pred_by_attr.items():
             first = bins[0]
             t = type(first[0])

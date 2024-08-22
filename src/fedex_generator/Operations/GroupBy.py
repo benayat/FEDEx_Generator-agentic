@@ -39,7 +39,7 @@ class GroupBy(Operation.Operation):
         return None
 
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None, hold_out=[],
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, consider='right', cont=None, attr=None):
         """
         Explain for group by operation
         :param schema: dictionary with new columns names, in case {'col_name': 'i'} will be ignored in the explanation

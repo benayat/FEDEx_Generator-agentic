@@ -220,11 +220,11 @@ class BaseMeasure(object):
 
         if K > 1: ###
             rows = math.ceil(len(scores) / figs_in_row)
-            fig, axes = plt.subplots(rows, figs_in_row, figsize=(7 * figs_in_row, 8 * rows))
+            fig, axes = plt.subplots(rows, figs_in_row, figsize=(5 * figs_in_row, 6 * rows))
             for ax in axes.reshape(-1):
                 ax.set_axis_off()
         else:
-            fig, axes = plt.subplots(figsize=(8, 8))
+            fig, axes = plt.subplots(figsize=(5, 5))
 
         title = title if title else self.build_operation_expression(source_name)
 
