@@ -43,7 +43,7 @@ class Join(Operation.Operation):
             yield attr, DatasetRelation(self.right_df, self.result_df, self.right_name)
 
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right'):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right', cont=None, attr=None):
         """
         Explain for filter operation
 
@@ -59,17 +59,17 @@ class Join(Operation.Operation):
         if explainer == 'shapley':
             measure = ShapleyMeasure()
         # else: score = 0
-            top_fact, facts = measure.get_most_contributing_fact(self, self.left_df, self.right_df, self.attribute,None, consider=consider)
-            exp = f'The result of joining dataframes \'{self.left_name}\' and \'{self.right_name}\' on attribute \'{self.attribute}\' is not empty.\nThe following fact from dataframe \'{self.left_name}\' has significantly contributed to this result:\n'
-            facts = list({k: v for k, v in sorted(facts.items(), key=lambda item: -item[1])}.items())
-            fact_idx = 0
-            exp += str(facts[fact_idx][0])
-            top_k -= 1
-            while top_k > 0:
-                fact_idx += 1
-                exp += '\n and then\n'
-                exp += str(facts[fact_idx][0])
-                top_k -= 1
+            top_fact, facts = measure.get_most_contributing_fact(self, self.left_df, self.right_df, self.attribute,None, consider=consider, top_k=top_k, cont=cont, att=attr)
+            # exp = f'The result of joining dataframes \'{self.left_name}\' and \'{self.right_name}\' on attribute \'{self.attribute}\' is not empty.\nThe following fact from dataframe \'{self.left_name}\' has significantly contributed to this result:\n'
+            # facts = list({k: v for k, v in sorted(facts.items(), key=lambda item: -item[1])}.items())
+            # fact_idx = 0
+            # exp += str(facts[fact_idx][0])
+            # top_k -= 1
+            # while top_k > 0:
+            #     fact_idx += 1
+            #     exp += '\n and then\n'
+            #     exp += str(facts[fact_idx][0])
+            #     top_k -= 1
             return 
         if attributes is None:
             attributes = []

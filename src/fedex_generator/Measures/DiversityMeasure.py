@@ -116,7 +116,7 @@ class DiversityMeasure(BaseMeasure):
 
             aggregate_column = [aggregated_result.get(item, 0) for item in labels]
             if show_scores:
-                ax.set_title(f'score: {score}\n{utils.to_valid_latex(title)}', fontdict={'fontsize': 14})
+                ax.set_title(f'score: {score}\n{utils.to_valid_latex(title)}', fontdict={'fontsize': 10})
             else:
                 ax.set_title(utils.to_valid_latex(title), fontdict={'fontsize': 14})
 
@@ -127,7 +127,7 @@ class DiversityMeasure(BaseMeasure):
         except Exception as e:
             columns = bin_item.get_binned_result_column()
             title = self._fix_explanation(title, columns, max_value)
-            ax.set_title(utils.to_valid_latex(title))
+            ax.set_title(utils.to_valid_latex(title), fontdict={'fontsize': 14})
             max_group_value = list(columns[columns == max_value].to_dict().keys())[0]
 
             draw_bar(list(columns.index),
@@ -223,7 +223,7 @@ class DiversityMeasure(BaseMeasure):
         if current_bin.name == "NumericBin":
             max_value_numeric = max_value
         elif current_bin.name == "CategoricalBin":
-            max_value_numeric = res_col.value_counts()[max_value]
+            max_value_numeric = max_value#res_col.value_counts()[max_value]
         elif current_bin.name == "MultiIndexBin":
             bin_values = current_bin.get_result_by_values([max_value])
             operation = self.get_agg_func_from_name(res_col.name)
@@ -244,14 +244,13 @@ class DiversityMeasure(BaseMeasure):
 
         sqr = np.sqrt(var)
         x = ((max_value_numeric - np.mean(res_col)) / sqr) if sqr != 0 else 0
-
         group_by_text = utils.to_valid_latex2(f"'{max_col_name}'='{max_value}'", True)
         proportion = 'low' if x < 0 else 'high'
         proportion_column = utils.to_valid_latex2(f"{proportion} '{res_col.name}'", True)
 
-        expl = f"Groups with {START_BOLD}{group_by_text}{END_BOLD} (in green) \n" \
+        expl = f"Groups with {START_BOLD}{group_by_text}{END_BOLD}(in green)\n" \
                f"have a relatively {START_BOLD}{proportion_column}{END_BOLD} value:\n" \
-               f"{utils.smart_round(np.abs(x))} standard deviation {proportion} than the mean " \
+               f"{utils.smart_round(np.abs(x))} standard deviations {proportion}er than the mean\n" \
                f"({utils.smart_round(np.mean(res_col))})"
 
         return expl
