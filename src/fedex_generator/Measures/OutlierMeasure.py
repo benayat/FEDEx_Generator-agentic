@@ -216,6 +216,7 @@ class OutlierMeasure(BaseMeasure):
         bold_g_att_target = r'$\bf{{{}}}$'.format(utils.to_valid_latex(f'{g_att}={target}'))
 
         explanation = f'This outlier is not as significant when excluding rows with:\n'
+        for_wizard = ''
         for a, bins in final_pred_by_attr.items():
             first = bins[0]
             t = type(first[0])
@@ -232,13 +233,14 @@ class OutlierMeasure(BaseMeasure):
                     elif b[1] >= 25:
                         inter_exp = inter_exp + '-' + r'$\bf{high}$'
                 # inter_exp += f', '
-            # inter_exp += '\n'
+            inter_exp += '\n'
+            for_wizard += inter_exp
             explanation += inter_exp
         # explanation += f'which removal {incdec} this value.'
         # explanation += f'\nBefore- {float("{:.5f}".format(df_agg[target]))}, After- {float("{:.5f}".format(final_df[target]))}'
 
         bar1 = ax.bar(ind1-0.2, y1, 0.4, alpha=1., label='All')
-        bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label=f'without {inter_exp}')
+        bar2 = ax.bar(ind2+0.2, y2, 0.4,alpha=1., label=f'without\n{for_wizard}')
         ax.set_ylabel(f'{g_agg} {agg_title}')
         ax.set_xlabel(f'{g_att}')
         ax.set_xticks(ind1)
