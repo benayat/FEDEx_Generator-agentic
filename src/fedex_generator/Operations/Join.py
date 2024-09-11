@@ -43,7 +43,7 @@ class Join(Operation.Operation):
             yield attr, DatasetRelation(self.right_df, self.result_df, self.right_name)
 
     def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
-                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right', cont=None, attr=None):
+                figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right', cont=None, attr=None, ignore=[]):
         """
         Explain for filter operation
 
