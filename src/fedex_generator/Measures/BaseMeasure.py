@@ -79,15 +79,15 @@ class BaseMeasure(object):
 
         return source_col, res_col
 
-    def calc_measure(self, operation_object, scheme, use_only_columns):
+    def calc_measure(self, operation_object, scheme, use_only_columns, ignore = []):
         self.operation_object = operation_object
         self.score_dict = {}
         self.max_val = -1
         self.scheme = scheme
 
         for attr, dataset_relation in operation_object.iterate_attributes():
-            if attr == 'decade':
-                pass
+            if attr in ignore:
+                continue
             column_scheme = scheme.get(attr, "ni").lower()
             if column_scheme == "i":
                 continue
