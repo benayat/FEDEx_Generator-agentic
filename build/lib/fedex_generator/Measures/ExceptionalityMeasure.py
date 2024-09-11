@@ -1,38 +1,17 @@
 import math
 
-from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from itertools import combinations
-import math
-import inspect
 
 from fedex_generator.commons import utils
 from fedex_generator.Measures.BaseMeasure import BaseMeasure, START_BOLD, END_BOLD
 from fedex_generator.Measures.Bins import Bin
 
 
-def is_name_informative(name):
-    import string
-    return any([char in string.ascii_letters for char in name])
 
-def get_calling_params_name(item):
-    frames = inspect.stack()
-    highest_var = None
-    for frame in frames[2:]:
-        prev_locals = frame[0].f_locals
-        for var_name in prev_locals:
-            if id(item) == id(prev_locals[var_name]) and is_name_informative(var_name):
-                highest_var = var_name
-    return highest_var
-
-
-class ShapleyMeasure(BaseMeasure):
+class ExceptionalityMeasure(BaseMeasure):
     def __init__(self):
         super().__init__()
-
-
-
 
     def draw_bar(self, bin_item: Bin, influence_vals: dict = None, title=None, ax=None, score=None,
                  show_scores: bool = False):
@@ -54,9 +33,9 @@ class ShapleyMeasure(BaseMeasure):
         width = 0.35
         ind = np.arange(len(labels))
 
-        result_bar = ax.bar(ind + width, probabilities2, width, label="After")
+        result_bar = ax.bar(ind + width, probabilities2, width, label="After Filter")
 
-        ax.bar(ind, probabilities, width, label="Before")
+        ax.bar(ind, probabilities, width, label="Before Filter")
         ax.legend(loc='best')
         if influence_vals:
             max_label, _ = self.get_max_k(influence_vals, 1)
@@ -103,149 +82,15 @@ class ShapleyMeasure(BaseMeasure):
         return ExceptionalityMeasure.kstest(bin.source_column.dropna(),
                                             bin.result_column.dropna())  # / len(source_col.dropna().value_counts())
 
-    def sat(self, d1, d2, attr, cond, k, cont, att, rem_attr=None, n=1):
-        total = 0
-        max_val = 0
-        # if n == 1:
-            # mem = self.mem1
-        # else:
-            # mem = self.mem2
-        ret = 0
-
-        for i in range(2, k):
-            # if k in mem.keys():
-                # total += mem[k]
-                # if mem[k] > max_val:
-                    # max_val = mem[k]
-                # continue
-            subsets_1 = list(combinations(d1.index, i))
-            subset_dfs_1 = [d1.loc[list(subset)] for subset in subsets_1]
-
-            subsets_2 = list(combinations(d2.index, k-i))
-        # print(len(subsets_2))
-            subset_dfs_2 = [d2.loc[list(subset)] for subset in subsets_2]
-            for sdf1 in subset_dfs_1:
-                # if str(sdf1) in self.mem_comb.keys():
-                    # ret += self.mem_comb[str(sdf1)]
-                    # continue
-                num = 0
-                sum = 0
-                # print(total)
-                for sdf2 in subset_dfs_2:
-                    df_join = pd.merge(sdf1, sdf2, on=attr, how='inner')
-                    if df_join.shape[0]:
-                        
-                    # print(f'--------------------------------\n{sdf1}\n**************\n{sdf2}')
-                        # total += 1
-                        val = df_join[att].agg(cont)
-                        if val > max_val:
-                            max_val = val
-                        # mem[k] = val
-                        sum += val
-                        total += 1
-                        num += 1
-                ret += sum / (num)
-                # ret = self.mem_comb[str(sdf1)]
-                
-        # if n == 1:
-            # self.mem1 = mem 
-        # else:
-            # self.mem2 = mem 
-        if total == 0:
-            return 0
-        return ret# sum / num# + np.log2(total)# / num)
-    
-    def shapley(self, d1, d1_exc, d2, attr, cond, sat,cont, att):
-        # m = min(d1.shape[0] + d2.shape[0], 3*d1.shape[0])
-        m = 5
-        including = 0
-        excluding = 0
-        self.mem1 = {}
-        self.mem2 = {}
-        for k in range(m):
-            if k not in self.including.keys():
-                self.including[k] =  ((math.factorial(k)*math.factorial(m - k - 1))/math.factorial(m)) * sat(d1, d2, attr, cond, k, n=1, cont=cont, att=att)
-            including += self.including[k]
-            # including += ((math.factorial(k)*math.factorial(m - k - 1))/math.factorial(m)) * sat(d1, d2, attr, cond, k, n=1, cont=cont, att=att)
-            excluding += ((math.factorial(k)*math.factorial(m - k - 1))/math.factorial(m)) * sat(d1_exc, d2, attr, cond, k, n=2, cont=cont, att=att)
-        return including - excluding
-    
-    def get_most_contributing_fact(self, op, d1, d2, attr, cond, consider='right', top_k=1, cont=None, att=None):
-        if att == None:
-            cont = 'count'
-            att = list(list(facts.values())[0].reset_index().to_dict().items())[0]
-        self.consider = consider
-        self.including = {}
-        self.mem_comb = {}
-        top_shapley = 0
-        top_fact = None
-        facts = {}
-        if consider == 'right':
-            d1_consider = d2
-            d2_consider = d1
-        else:
-            d1_consider = d1
-            d2_consider = d2
-        d2_consider = d2_consider[d2_consider[attr].isin(pd.merge(d1_consider, d2_consider, on=attr, how='inner')[attr])]
-        for i in (d1_consider.index):
-            # print(f'{i}')#, {d1_consider.loc[i][attr]}, {pd.merge(d1_consider, d2_consider, on=attr, how='inner')[attr].values}')
-            if d1_consider.loc[i][attr] not in pd.merge(d1_consider, d2_consider, on=attr, how='inner')[attr].values:
-                v_shapley = 0
-            else:
-                d_tmp = d1_consider.drop(index=i, inplace=False)
-                v_shapley = self.shapley(d1_consider, d_tmp, d2_consider, attr, cond, self.sat, cont, att)
-            facts[str(d1_consider.loc[i])] = [v_shapley, d1_consider[d1_consider.index == i]]
-            if v_shapley > top_shapley:
-                top_shapley = v_shapley
-                top_fact = d1_consider[d1_consider.index == i]
-        pass
-        facts = {k: v[1] for k, v in sorted(facts.items(), key=lambda item: -(item[1][0]))}
-    # print(f'The top fact here is:\n{str(top_fact)}')
-        fig, axes = plt.subplots(1, figsize=(14, 2))
-
-        axes.axis('off')
-        # axes[1].axis('off')
-        d1_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d1.df_name, True))
-        d2_name = r'$\bf{{{}}}$'.format(utils.to_valid_latex(d2.df_name, True))
-        if consider == 'left':
-            consider = d1_name
-        else:
-            consider = d2_name
-        bold_attr = r'$\bf{{{}}}$'.format(utils.to_valid_latex(attr), True)
-        
-        if top_k == 1:
-            explanation = f'When joining the DataFrames\nThe most significant fact from DataFrame {consider} is:\n'
-        else:
-            explanation = f'When joining the DataFrames\nThe {top_k} most significant facts from DataFrame {consider} in descending order are:'
-        # explanation = f'The tuple '
-        fact_exp = ''
-        n = 0
-        while n < top_k:
-            i = 0
-            explanation += f'\n'
-            for k, v in list(facts.values())[n].reset_index().to_dict().items():
-                if i != 0:
-                    explanation += ', '
-                i += 1
-            # v = r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))
-                # r'$\bf{{{}}}$'.format(utils.to_valid_latex(f'{k}={v[0]}', True))
-                
-                # explanation += f'{r'$\bf{{{}}}$'.format(utils.to_valid_latex(k, True))}={r'$\bf{{{}}}$'.format(utils.to_valid_latex(v[0], True))}'
-            n += 1
-        # explanation += f'\nfrom DataFrame {consider} is {r'$\bf{very}$'} {r'$\bf{significant}$'} for this result.'
-        props1 = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        axes.text(0.5, 0.5, explanation, transform=axes.transAxes, fontsize=20,
-        verticalalignment='center', horizontalalignment='center', bbox=props1)
-
-        props2 = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        # axes[1].text(0.5, 0.5, fact_exp, transform=axes[1].transAxes, fontsize=14,
-        # verticalalignment='center', horizontalalignment='center', bbox=props2)
-        fig.show()
-        # txt = ax.text(x, y, n, fontsize=10)
-        return top_fact, facts
+    @staticmethod
+    def kstest(s, r):
+        s = np.array(s)
+        s = s[s == s]
+        r = np.array(r)
+        r = r[r == r]
+        return 0 if len(r) == 0 else utils.ks_2samp(s, r).statistic
 
     def calc_influence_col(self, current_bin: Bin):
-        self.including = None
         bin_values = current_bin.get_bin_values()
         source_col = current_bin.get_source_by_values(bin_values)
         res_col = current_bin.get_result_by_values(bin_values)
@@ -335,5 +180,5 @@ class ShapleyMeasure(BaseMeasure):
                 f"{END_BOLD} (in green)\n{proportion_sentes}")
 
         influence_top_example = ", ".join(additional_explanation)
-        
+
         return influence_top_example

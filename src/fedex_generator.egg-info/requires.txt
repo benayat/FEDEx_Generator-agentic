@@ -1,0 +1,8 @@
+wheel
+pandas
+numpy
+python-dotenv
+singleton-decorator
+ipython
+scipy
+paretoset
