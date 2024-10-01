@@ -22,9 +22,10 @@ RUN git clone https://github.com/benayat/pd-explain-agentic.git && \
 
 # Install Jupyter Notebook
 RUN pip install --no-cache-dir jupyter
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose port 8888 for Jupyter Notebook
 EXPOSE 8888
 
 # Command to run when the container starts
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''", "--NotebookApp.default_url=/app/Notebooks/agents_adults-DEMO.ipynb"]
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]

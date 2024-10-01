@@ -53,7 +53,3 @@ fedex-generator->operations->[Filter,GroupBy,Join]->explain, and Measures->Basic
 - Add your openai api key and base url to the `OPENAI_API_KEY` and `OPENAI_BASE_URL` environment variables.
 - Run Notebooks/agents_adults-DEMO.ipynb for a demo.
 - Note: The notebook is currently set to load environment variables from a .env file, so make sure to add the api key and base url to the .env file, or change the notebook to load the variables from the environment.
-
-#### usage-with docker:
-- make sure you have docker installed.
-- simply run `docker run -p 8888:8888 benaya7/agentic-fedex:1.0.0`, and go to `http://localhost:8888/notebooks/Notebooks/agents_adults-DEMO.ipynb` in your browser.
