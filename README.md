@@ -45,7 +45,7 @@ fedex`.(arXiv:2209.06260 [cs.DB], 3864). For that purpose, I focused on making t
 - Added the agents package.
 - Since the update for async api pipelines, I had to bubble up `async` def and `await` calls. The changes are in the following places: in pd-explain-> [explainable_data_frame,explainable_group_by_dataframe, explainable_series] files -> explain func,
 fedex-generator->operations->[Filter,GroupBy,Join]->explain, and Measures->BasicMeasure->calc_influence.
-#### usage:
+#### usage-without docker:
 - Clone the repo and create a venv virtual environment with python 3.12.
 - Run `pip install -e .` in the root directory.
 - Clone the updated pd-explain [repo](https://github.com/benayat/pd-explain-agentic.git)
@@ -53,3 +53,7 @@ fedex-generator->operations->[Filter,GroupBy,Join]->explain, and Measures->Basic
 - Add your openai api key and base url to the `OPENAI_API_KEY` and `OPENAI_BASE_URL` environment variables.
 - Run Notebooks/agents_adults-DEMO.ipynb for a demo.
 - Note: The notebook is currently set to load environment variables from a .env file, so make sure to add the api key and base url to the .env file, or change the notebook to load the variables from the environment.
+
+#### usage-with docker:
+- make sure you have docker installed.
+- simply run `docker run -p 8888:8888 benaya7/agentic-fedex:1.0.0`, and go to `http://localhost:8888/notebooks/Notebooks/agents_adults-DEMO.ipynb` in your browser.
