@@ -38,7 +38,7 @@ class GroupBy(Operation.Operation):
     def get_source_col(self, filter_attr, filter_values, bins):
         return None
 
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None, hold_out=[],
+    async def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT, explainer='fedex', target=None, dir=None, control=None, hold_out=[],
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, consider='right', cont=None, attr=None, ignore=[]):
         """
         Explain for group by operation
@@ -81,7 +81,7 @@ class GroupBy(Operation.Operation):
         measure = DiversityMeasure()
         # measure = NormalizedDiversityMeasure()
         scores = measure.calc_measure(self, schema, attributes, ignore=ignore)
-        figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
+        figures = await measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
         return figures
 

@@ -3,3 +3,5 @@ numpy
 matplotlib
 scipy
 paretoset
+openai
+python-dotenv

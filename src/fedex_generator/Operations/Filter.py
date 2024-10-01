@@ -89,7 +89,7 @@ class Filter(Operation.Operation):
         return binned_col[binned_col.isin(filter_values)]
 
     
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
+    async def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right', cont=None, attr=None, ignore=[]):
         """
         Explain for filter operation
@@ -113,7 +113,7 @@ class Filter(Operation.Operation):
         measure = ExceptionalityMeasure()
         scores = measure.calc_measure(self, schema, attributes)
         self.delete_correlated_atts(measure, TH = corr_TH)
-        figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
+        figures = await measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
         if figures:
             self.correlated_notes(figures, top_k)

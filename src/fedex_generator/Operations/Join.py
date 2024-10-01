@@ -42,7 +42,7 @@ class Join(Operation.Operation):
                 continue
             yield attr, DatasetRelation(self.right_df, self.result_df, self.right_name)
 
-    def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
+    async def explain(self, schema=None, attributes=None, top_k=TOP_K_DEFAULT,
                 figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, corr_TH: float = 0.7, explainer='fedex', consider='right', cont=None, attr=None, ignore=[]):
         """
         Explain for filter operation
@@ -78,6 +78,6 @@ class Join(Operation.Operation):
             schema = {}
         measure = ExceptionalityMeasure()
         scores = measure.calc_measure(self, schema, attributes)
-        figures = measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
+        figures = await measure.calc_influence(utils.max_key(scores), top_k=top_k, figs_in_row=figs_in_row,
                                          show_scores=show_scores, title=title)
         return figures

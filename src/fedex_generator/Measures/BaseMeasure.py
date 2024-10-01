@@ -10,7 +10,7 @@ from paretoset import paretoset
 from fedex_generator.Measures.Bins import Bins, Bin
 from fedex_generator.commons.consts import SIGNIFICANCE_THRESHOLD, TOP_K_DEFAULT, DEFAULT_FIGS_IN_ROW
 from fedex_generator.commons.utils import is_numeric, to_valid_latex
-
+from fedex_generator.agents.agents_manager import AgentsManager
 
 
 usetex = False#matplotlib.checkdep_usetex(True)
@@ -165,7 +165,7 @@ class BaseMeasure(object):
 
         return (influence - influence_mean) / np.sqrt(influence_var)
 
-    def calc_influence(self, brute_force=False, top_k=TOP_K_DEFAULT,
+    async def calc_influence(self, brute_force=False, top_k=TOP_K_DEFAULT,
                        figs_in_row: int = DEFAULT_FIGS_IN_ROW, show_scores: bool = False, title: str = None, deleted = None):###
         if deleted:###
             score_dict = deleted
@@ -228,20 +228,23 @@ class BaseMeasure(object):
 
         title = title if title else self.build_operation_expression(source_name)
 
-
-        fig.suptitle(title, fontsize=20)
-
-        for index, (explanation, current_bin, current_influence_vals, score) in enumerate(
-                zip(explanations, bins, influence_vals, scores)):
-
-
-            fig = self.draw_bar(current_bin, current_influence_vals, title=explanation,
-                                ax=axes.reshape(-1)[index] if K > 1 else axes, score=score, show_scores=show_scores) ###
-            if fig:
-                figures.append(fig)
-
-        plt.tight_layout()
-        return figures if len(figures) > 0 else fig
+        # Create a list of dictionaries containing the entire data
+        analysis_results = [
+            {
+                'explanation': explanation,
+                'action_title': title,
+                'bin_name': current_bin.name,
+                'source_column': current_bin.source_column,
+                'result_column': current_bin.result_column,
+                'values_to_influence_dict': current_influence_vals,
+                'column_score': score
+            }
+            for explanation, current_bin, current_influence_vals, score in
+            zip(explanations, bins, influence_vals, scores)
+        ]
+        # set up "use scores" flag - otherwise let the llm decide.
+        agents_manager = AgentsManager()
+        await agents_manager.run_pipelines_for_multiple_plots_concurrently(analysis_results)
 
     def calc_interestingness_only(self):
         score_and_col = [(self.score_dict[col][2], col, self.score_dict[col][1], self.score_dict[col][3])

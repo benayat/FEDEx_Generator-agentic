@@ -22,6 +22,15 @@ src/fedex_generator/Operations/GroupBy.py
 src/fedex_generator/Operations/Join.py
 src/fedex_generator/Operations/Operation.py
 src/fedex_generator/Operations/__init__.py
+src/fedex_generator/agents/__init__.py
+src/fedex_generator/agents/agents_manager.py
+src/fedex_generator/agents/base_agent.py
+src/fedex_generator/agents/code_combiner_agent.py
+src/fedex_generator/agents/code_instructor_agent.py
+src/fedex_generator/agents/explanation_agent.py
+src/fedex_generator/agents/matplotlib_code_agent.py
+src/fedex_generator/agents/matplotlib_refine_agent.py
+src/fedex_generator/agents/utils.py
 src/fedex_generator/commons/DatasetRelation.py
 src/fedex_generator/commons/__init__.py
 src/fedex_generator/commons/consts.py
