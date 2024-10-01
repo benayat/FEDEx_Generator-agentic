@@ -46,7 +46,7 @@ fedex`.(arXiv:2209.06260 [cs.DB], 3864). For that purpose, I focused on making t
 - Since the update for async api pipelines, I had to bubble up `async` def and `await` calls. The changes are in the following places: in pd-explain-> [explainable_data_frame,explainable_group_by_dataframe, explainable_series] files -> explain func,
 fedex-generator->operations->[Filter,GroupBy,Join]->explain, and Measures->BasicMeasure->calc_influence.
 #### usage:
-- Clone the repo.
+- Clone the repo and create a venv virtual environment with python 3.12.
 - Run `pip install -e .` in the root directory.
 - Clone the updated pd-explain [repo](https://github.com/benayat/pd-explain-agentic.git)
 - Run `cd pd-explain-agentic && pip install -e .`
