@@ -7,6 +7,8 @@ from fedex_generator.agents.matplotlib_refine_agent import MatplotlibRefineAgent
 import os
 import asyncio
 
+from fedex_generator.agents.single_agent import SingleAgent
+
 base_url = os.getenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
 api_key = os.getenv("OPENAI_API_KEY", "ollama")
 
@@ -16,11 +18,11 @@ class AgentsManager:
         Initializes all the agents (ExplanationAgent, CodeInstructorAgent, MatplotlibCodeAgent, MatplotlibRefineAgent)
         and manages their activity.
         """
-        explanation_model = 'gpt-4o-mini'
-        code_instructor_model = 'gpt-4o'
-        matplotlib_code_model = 'gpt-4o'
-        matplotlib_refine_model = 'gpt-4o'
-        code_combiner_model = 'gpt-4o'
+        explanation_model = os.getenv("EXPLANATION_MODEL", "gpt-4o")
+        code_instructor_model = os.getenv("CODE_INSTRUCTOR_MODEL", "gpt-4o")
+        matplotlib_code_model = os.getenv("MATPLOTLIB_CODE_MODEL", "gpt-4o")
+        matplotlib_refine_model = os.getenv("MATPLOTLIB_REFINE_MODEL", "gpt-4o")
+        code_combiner_model = os.getenv("CODE_COMBINER_MODEL", "gpt-4o")
 
         # Initialize the agents
         self.explanation_agent = ExplanationAgent(base_url_local, api_key_local, explanation_model)
@@ -28,7 +30,7 @@ class AgentsManager:
         self.matplotlib_code_agent = MatplotlibCodeAgent(base_url_local, api_key_local, matplotlib_code_model)
         self.matplotlib_refine_agent = MatplotlibRefineAgent(base_url_local, api_key_local, matplotlib_refine_model)
         self.code_combiner_agent = CodeCombinerAgent(base_url_local, api_key_local, code_combiner_model)
-
+        self.single_agent = SingleAgent(base_url_local, api_key_local, 'gpt-4o')
     async def generate_explanation(self, analysis_result):
         """
         Generates a rephrased explanation using the ExplanationAgent.
@@ -102,6 +104,60 @@ class AgentsManager:
         refined_code = await self.refine_matplotlib_code(matplotlib_code)
         return refined_code if refined_code else matplotlib_code
 
+
+    async def run_single_agent(self, analysis_result):
+        """
+        runs a single agent with improved prompt, and returns a json object with both explanation and code snippet.
+        example: {
+  "rephrased_explanation": "We found that people's age affects how much they spend.",
+  "matplotlib_code": "
+    import matplotlib.pyplot as plt
+
+    age_groups = ['25', '30', '35']
+    spending = [1000, 1500, 1200]
+
+    plt.bar(age_groups, spending)
+    plt.title('Age Group vs. Spending')
+    plt.xlabel('Age Group')
+    plt.ylabel('Average Spending')
+    plt.show()
+  "
+}
+        """
+        return await self.single_agent.generate_explanation_and_code_in_json(analysis_result)
+    async def run_single_agents_concurrently(self, analysis_results):
+        """
+        Manages the full process for multiple plots concurrently.
+        generates a json list of dicts of explanation and code snippets for each plot, and runs it concurrently.
+
+        Parameters:
+        analysis_results (List[dict]): List of analysis result data for the ExplanationAgent.
+
+        Returns:
+        List[dict]: List of json objects with rephrased explanations and Matplotlib code
+        """
+        # Run the pipeline concurrently for each plot
+        explanation_code_list = await asyncio.gather(*[self.run_single_agent(analysis_result) for analysis_result in analysis_results])
+        for explanation, code in explanation_code_list:
+            print(explanation)
+            utils.execute_generated_code(code)
+
+
+    async def run_single_agents_serially(self, analysis_results):
+        """
+        Manages the full process for multiple plots serially.
+        generates a json list of dicts of explanation and code snippets for each plot, and runs it serially.
+
+        Parameters:
+        analysis_results (List[dict]): List of analysis result data for the ExplanationAgent.
+
+        Returns:
+        List[dict]: List of json objects with rephrased explanations and Matplotlib code
+        """
+        # explanation_code_list = []
+        for analysis_result in analysis_results:
+            explanation, code = await self.run_single_agent(analysis_result)
+            utils.execute_generated_code(code)
     async def run_pipelines_for_multiple_plots_concurrently(self, analysis_results):
         """
         Manages the full process for multiple plots concurrently.

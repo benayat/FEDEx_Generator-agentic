@@ -244,7 +244,9 @@ class BaseMeasure(object):
         ]
         # set up "use scores" flag - otherwise let the llm decide.
         agents_manager = AgentsManager()
-        await agents_manager.run_pipelines_for_multiple_plots_concurrently(analysis_results)
+        # await agents_manager.run_pipelines_for_multiple_plots_concurrently(analysis_results)
+        # await agents_manager.run_single_agents_concurrently(analysis_results)
+        await agents_manager.run_single_agents_serially(analysis_results)
 
     def calc_interestingness_only(self):
         score_and_col = [(self.score_dict[col][2], col, self.score_dict[col][1], self.score_dict[col][3])
