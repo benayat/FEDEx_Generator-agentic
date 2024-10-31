@@ -233,10 +233,8 @@ class BaseMeasure(object):
             {
                 'explanation': explanation,
                 'action_title': title,
-                'bin_name': current_bin.name,
-                'source_column': current_bin.source_column,
-                'result_column': current_bin.result_column,
-                'values_to_influence_dict': current_influence_vals,
+                'bin': current_bin,
+                'value_to_influences_dict': current_influence_vals,
                 'column_score': score
             }
             for explanation, current_bin, current_influence_vals, score in

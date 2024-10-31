@@ -157,7 +157,7 @@ class AgentsManager:
         # explanation_code_list = []
         for analysis_result in analysis_results:
             explanation, code = await self.run_single_agent(analysis_result)
-            utils.execute_generated_code(code)
+            utils.execute_generated_code(code, debug=True)
     async def run_pipelines_for_multiple_plots_concurrently(self, analysis_results):
         """
         Manages the full process for multiple plots concurrently.
